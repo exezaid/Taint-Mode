@@ -8,12 +8,12 @@ def obtener_numero(mensaje="Ingrese un numero: "):
     n = raw_input(mensaje)
     return n
 
-@cleaner
+@cleaner(SQLI)
 def limpiarSQLi(s):
     '''lo limpie, creeme.'''
     return s
 
-@ssinc  
+@ssinc()
 def guardarDB(valor):
     print "Guardando en la BD:", valor
 
