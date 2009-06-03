@@ -5,6 +5,7 @@ TAINTED = dict([(x, set()) for x in KEYS])
 def untrusted(f):
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
+        r = STR(r)
         [s.add(r) for s in TAINTED.values()] # unstrusted for ALL
         return r
     return inner
@@ -34,4 +35,23 @@ def ssinc(v=None):
                     print "WARNING", v
         return inner            
     return _ssinc
+    
+# String operations
+def tainter(f):
+    def inner(self, other):
+        r = f(self, other)
+        r = STR(r)
+        for v, s in TAINTED.items():
+            if self in s or other in s:
+                s.add(r)
+        return r
+    return inner
+    
+class STR(str):
 
+    @tainter
+    def __add__(self, other):
+        return super(STR, self).__add__(other)
+
+    def __radd__(self, other):
+        return STR.__add__(STR(other), self)    # a better way for this?
