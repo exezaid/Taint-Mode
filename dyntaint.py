@@ -46,6 +46,17 @@ def tainter(f):
                 s.add(r)
         return r
     return inner
+
+def tainter2(f):
+    def inner(*args):   # first element is self
+        r = f(*args)
+        r = STR(r)
+        self = args[0]
+        for v, s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+    return inner
     
 class STR(str):
 
@@ -55,3 +66,47 @@ class STR(str):
 
     def __radd__(self, other):
         return STR.__add__(STR(other), self)    # a better way for this?
+     
+     @tainter2
+    def __getslice__(self, i, j):
+        return super(STR, self).__getslice__(i, j)
+        
+    def __getitem__(self, y):
+        r = super(STR, self).__getitem__(y)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+        
+    def __mod__(self, y):
+        r = super(STR, self).__mod__(y)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r    
+        
+    def __mul__(self, y):
+        r = super(STR, self).__mul__(y)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r            
+
+    def __rmod__(self, other):
+        return STR.__mod__(STR(other), self)    # a better way for this?
+        
+    def __rmul__(self, other):
+        return STR.__rmul__(STR(other), self)    # a better way for this?        
+        
+    def __join__(self, y):
+        r = super(STR, self).__join__(y)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+
+# Faltan los públicos        
