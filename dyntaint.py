@@ -1,7 +1,6 @@
 KEYS  = [XSS, SQLI] = range(2)
 TAINTED = dict([(x, set()) for x in KEYS])
 
-
 def untrusted(f):
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
