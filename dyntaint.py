@@ -37,40 +37,28 @@ def ssinc(v=None):
     return _ssinc
     
 # String operations
-def tainter(f):
-    def inner(self, other):
-        r = f(self, other)
+# lo siguiente puede hacerse con un decorador.
+class STR(str):
+
+    def __add__(self, other):
+        r = super(STR, self).__add__(other)
         r = STR(r)
         for v, s in TAINTED.items():
             if self in s or other in s:
                 s.add(r)
         return r
-    return inner
-
-def tainter2(f):
-    def inner(*args):   # first element is self
-        r = f(*args)
-        r = STR(r)
-        self = args[0]
-        for v, s in TAINTED.items():
-            if self in s:
-                s.add(r)
-        return r
-    return inner
-    
-class STR(str):
-
-    @tainter
-    def __add__(self, other):
-        return super(STR, self).__add__(other)
 
     def __radd__(self, other):
         return STR.__add__(STR(other), self)    # a better way for this?
      
-     @tainter2
     def __getslice__(self, i, j):
-        return super(STR, self).__getslice__(i, j)
-        
+        r = super(STR, self).__getslice__(i, j)
+        r = STR(r)
+        for v, s in TAINTED.items():
+            if self in s:
+                s.add(r) 
+        return r
+
     def __getitem__(self, y):
         r = super(STR, self).__getitem__(y)
         r = STR(r)
@@ -99,7 +87,7 @@ class STR(str):
         return STR.__mod__(STR(other), self)    # a better way for this?
         
     def __rmul__(self, other):
-        return STR.__rmul__(STR(other), self)    # a better way for this?        
+        return STR.__mul__(STR(self), other)    # a better way for this?        
         
     def __join__(self, y):
         r = super(STR, self).__join__(y)
@@ -109,4 +97,4 @@ class STR(str):
                 s.add(r)
         return r
 
-# Faltan los públicos        
+# Faltan los publicos        
