@@ -39,7 +39,7 @@ def ssink(v=None, reached=reached):
                 if not (set(args) | set(kwargs.values())) & TAINTED[v]:
                     return f(*args, **kwargs)
                 else:
-                    print reached(v)
+                    reached(v)
         return inner            
     return _ssinc
     
