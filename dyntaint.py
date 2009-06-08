@@ -1,6 +1,14 @@
 KEYS  = [XSS, SQLI] = range(2)
 TAINTED = dict([(x, set()) for x in KEYS])
 
+def reached(v=None):
+    '''Execute if a tainted value reaches a sensitive sink
+    for the vulnerability v. '''
+    if v:
+        print "WARNING", v
+    else:
+        print "WARNING ALL"
+
 def untrusted(f):
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
@@ -19,19 +27,19 @@ def cleaner(v):
         return inner
     return _cleaner
     
-def ssink(v=None):
+def ssink(v=None, reached=reached):
     def _ssinc(f):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
                 if not (set(args) | set(kwargs.values()) & reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
                     return f(*args, **kwargs)
                 else:
-                    print "WARNING ALL"
+                    reached()
             else:
                 if not (set(args) | set(kwargs.values())) & TAINTED[v]:
                     return f(*args, **kwargs)
                 else:
-                    print "WARNING", v
+                    print reached(v)
         return inner            
     return _ssinc
     
