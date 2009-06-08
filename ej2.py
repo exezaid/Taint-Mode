@@ -13,7 +13,7 @@ def limpiarSQLi(s):
     '''lo limpie, creeme.'''
     return s
 
-@ssinc()
+@ssink()
 def guardarDB(valor):
     print "Guardando en la BD:", valor
 

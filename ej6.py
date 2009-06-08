@@ -20,7 +20,7 @@ def guardarDB(valor):
 def mostrarPagina(valor):
     print '<html>%s</html>' % (valor,)
 
-@ssinc()
+@ssink()
 def sensible(valor):
     print valor
 

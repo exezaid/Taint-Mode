@@ -19,7 +19,7 @@ def cleaner(v):
         return inner
     return _cleaner
     
-def ssinc(v=None):
+def ssink(v=None):
     def _ssinc(f):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
