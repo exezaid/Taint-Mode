@@ -96,4 +96,58 @@ class STR(str):
                 s.add(r)
         return r
 
-# Faltan los publicos        
+    def capitalize(self):
+        r = super(STR, self).capitalize()
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+        
+    def center(self, width, fillchar=' '):
+        r = super(STR, self).center(width, fillchar)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+        
+    # decode, encode ?
+    
+    def expandtabs(self, tabsize=8):
+        r = super(STR, self).expandtabs(tabsize)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r    
+        
+    def ljust(self, width, fillchar=' '):
+        r = super(STR, self).ljust(width, fillchar)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+        
+    def lower(self):
+        r = super(STR, self).lower()
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+        
+    # lstrip
+    
+    def partition(self, sep):
+        head, sep, tail = super(STR, self).partition(sep)
+        head, sep, tail = STR(h), STR(s), STR(t)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(head)
+                if sep:
+                    s.add(sep)
+                if tail:
+                    s.add(tail)
+        return head, sep, tail

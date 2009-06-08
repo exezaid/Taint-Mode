@@ -30,6 +30,7 @@ if __name__ == '__main__':
     # n esta manchada
     guardarDB(n)
     a, b, c = re.findall( '(.*?),(.*?),(.*?)', n )[0]
+    # a, b y c estan manchadas
     sensible(a)
     sensible(b)
     sensible(c)
