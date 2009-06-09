@@ -31,7 +31,7 @@ def ssink(v=None, reached=reached):
     def _ssinc(f):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
-                if not (set(args) | set(kwargs.values()) & reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
+                if not ((set(args) | set(kwargs.values())) & reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
                     return f(*args, **kwargs)
                 else:
                     reached()
@@ -44,8 +44,11 @@ def ssink(v=None, reached=reached):
     return _ssinc
     
 # String operations
-# lo siguiente puede hacerse con un decorador.
+# lo siguiente puede hacerse con un decorador. ?
 class STR(str):
+
+    def __str__(self):
+        return self
 
     def __add__(self, other):
         r = super(STR, self).__add__(other)
@@ -95,14 +98,6 @@ class STR(str):
         
     def __rmul__(self, other):
         return STR.__mul__(STR(self), other)    # a better way for this?        
-        
-    def __join__(self, y):
-        r = super(STR, self).__join__(y)
-        r = STR(r)
-        for v,s in TAINTED.items():
-            if self in s:
-                s.add(r)
-        return r
 
     def capitalize(self):
         r = super(STR, self).capitalize()
@@ -129,6 +124,14 @@ class STR(str):
             if self in s:
                 s.add(r)
         return r    
+
+    def join(self, y):
+        r = super(STR, self).join(y)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
         
     def ljust(self, width, fillchar=' '):
         r = super(STR, self).ljust(width, fillchar)

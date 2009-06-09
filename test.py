@@ -28,6 +28,11 @@ def saveDB1(valor):
 def saveDB2(valor):
     '''Dummy save in database function. Only sensitive to SQL injection.'''
     return True
+
+@ssink(v=XSS, reached=reached)
+def saveDB3(valor):
+    '''Dummy save in database function. Only sensitive to SQL injection.'''
+    return True
     
 class TestDifferenteVulnerabilities(unittest.TestCase):
 
@@ -79,7 +84,123 @@ class TestTaintFlow(unittest.TestCase):
             
         i = some_input()
         self.assertTrue(saveDB2(cleanSQLI("hohoho" + i)))
-                                                    
+
+    def test_indexing_not_cleaned(self):
+        '''if you get an item from a tainted value, te item is also tainted.'''
+            
+        i = some_input()
+        self.assertFalse(saveDB2(i[4]))
+        
+    def test_indexing(self):
+        '''if you get an item from a tainted value, te item is also tainted.'''
+            
+        i = some_input()
+        self.assertTrue(saveDB2(cleanSQLI(i[4])))
+
+    def test_mul_not_cleaned(self):
+        '''if s is tainted, s * n is also tainted.'''
+            
+        i = some_input()
+        self.assertFalse(saveDB2(i * 8))
+        
+    def test_mul(self):
+        '''if s is tainted, s * n is also tainted.'''
+            
+        i = some_input()
+        self.assertTrue(saveDB2(cleanSQLI(i * 8)))
+
+    def test_left_mul_not_cleaned(self):
+        '''if s is tainted, n * s is also tainted.'''
+            
+        i = some_input()
+        self.assertFalse(saveDB2(8 * i))
+        
+    def test_left_mul(self):
+        '''if s is tainted, n * s is also tainted.'''
+            
+        i = some_input()
+        self.assertTrue(saveDB2(cleanSQLI(8 * i)))
+
+    def test_slice_not_cleaned(self):
+        '''if  you slice a tainted value, the slice also tainted.'''
+            
+        i = some_input()
+        self.assertFalse(saveDB2(i[2:5]))
+        
+    def test_slice(self):
+        '''if  you slice a tainted value, the slice also tainted.'''
+            
+        i = some_input()
+        self.assertTrue(saveDB2(cleanSQLI(i[2:5] )))
+ 
+    def test_join_not_cleaned(self):
+        '''if s is tainted, s.join(aLista) is also tainted.'''
+            
+        i = some_input()
+        self.assertFalse(saveDB2(i.join(['_', '_', '_'])))
+        
+    def test_join(self):
+        '''if s is tainted, s.join(aLista) is also tainted.'''
+            
+        i = some_input()
+        self.assertTrue(saveDB2(cleanSQLI(i.join(['_', '_', '_']))))  
+
+    def test_arg_join_not_cleaned(self):
+        '''if s is tainted and aList contains s, someString.join(aList) is also tainted.'''
+        
+        i = some_input()
+        #self.assertFalse(saveDB2("".join([i, i, i])))   # esto es un problema
+        
+    def test_arg_join(self):
+        '''if s is tainted and aList contains s, someString.join(aList) is also tainted.'''
+            
+        i = some_input()
+        self.assertTrue(saveDB2(cleanSQLI("".join([i, i, i])))) 
+
+
+class TestTAINTED(unittest.TestCase):
+
+    def test_all_set(self):
+        n = some_input()
+        self.assertTrue(n in TAINTED[SQLI])
+        self.assertTrue(n in TAINTED[XSS])
+
+    def test_in_one_set(self):
+        n = some_input()
+        n = cleanSQLI(n)
+        self.assertFalse(n in TAINTED[SQLI])
+        self.assertTrue(n in TAINTED[XSS])
+        
+    def test_in_no_set(self):
+        n = some_input()
+        n = cleanSQLI(n)
+        n = cleanXSS(n)
+        self.assertFalse(n in TAINTED[SQLI])
+        self.assertFalse(n in TAINTED[XSS])    
+
+class TestSink(unittest.TestCase):
+
+    def test_false_all(self):
+        n = some_input()
+        self.assertFalse(saveDB1(n))
+        self.assertFalse(saveDB2(n))
+        self.assertFalse(saveDB3(n))
+
+    def test_one(self):
+        n = some_input()
+        n = cleanSQLI(n)
+        self.assertFalse(saveDB1(n))
+        self.assertTrue(saveDB2(n))
+        self.assertFalse(saveDB3(n))
+        
+    def test_true_all(self):
+        n = some_input()
+        n = cleanSQLI(n)
+        n = cleanXSS(n)
+        self.assertTrue(saveDB1(n))
+        self.assertTrue(saveDB2(n))
+        self.assertTrue(saveDB3(n))
+
 if __name__ == '__main__':
     unittest.main()
 

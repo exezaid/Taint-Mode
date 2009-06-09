@@ -12,11 +12,11 @@ def limpiarSQLi(s):
     '''lo limpie, creeme.'''
     return s
 
-@ssinc(SQLI)
+@ssink(SQLI)
 def guardarDB(valor):
     print "Guardando en la BD:", valor
 
-@ssinc(XSS)
+@ssink(XSS)
 def mostrarPagina(valor):
     print '<html>%s</html>' % (valor,)
 
@@ -47,9 +47,12 @@ if __name__ == '__main__':
     r = 10 * q
     # r esta mancha
     sensible(r)
+    print "JOIN"
     s = n.join([' ', ' ', ' '])
+    print type(s)
     # s esta manchada
-    sensible(s)
-    s2 = "".join([n,n,n])   
+    mostrarPagina(s)
+    s2 = " ".join([n,n,n])
+    print type(s2)   
     #s2 esta manchada
-    sensible(s2)
+    mostrarPagina(s2)
