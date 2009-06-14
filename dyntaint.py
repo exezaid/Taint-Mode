@@ -43,6 +43,12 @@ def ssink(v=None, reached=reached):
         return inner            
     return _ssinc
     
+def tainted(o):
+    for v, s in TAINTED.items():
+        if o in s:
+            return True
+    return False
+
 # String operations
 # lo siguiente puede hacerse con un decorador. ?
 class STR(str):
@@ -149,11 +155,17 @@ class STR(str):
                 s.add(r)
         return r
         
-    # lstrip
-    
+    def lstrip(self, chars=' '):
+        r = super(STR, self).lstrip(chars)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+            
     def partition(self, sep):
         head, sep, tail = super(STR, self).partition(sep)
-        head, sep, tail = STR(h), STR(s), STR(t)
+        head, sep, tail = STR(head), STR(sep), STR(tail)
         for v,s in TAINTED.items():
             if self in s:
                 s.add(head)
@@ -162,3 +174,11 @@ class STR(str):
                 if tail:
                     s.add(tail)
         return head, sep, tail
+
+    def replace(self, old, new, count=-1):
+        r = super(STR, self).replace(old, new, count)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r        
