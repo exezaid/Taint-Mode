@@ -45,7 +45,11 @@ def ssink(v=None, reached=reached):
     
 def tainted(o, vul=None):
     if vul:
-        return o in TAINTED[v]
+        vulset = TAINTED.get(vul)
+        if vulset:
+            return o in vulset
+        else:
+            return False
     for v, s in TAINTED.items():
         if o in s:
             return True

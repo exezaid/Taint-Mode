@@ -293,10 +293,30 @@ class TestTAINTED(unittest.TestCase):
 
 class TestTainted(unittest.TestCase):
 
-    def test_taint1(self):
-        i = some_input('taint1')
-        self.assertTrue(tainted(i))  
-        
+    def test_taint(self):
+        x = 'taint'
+        self.assertFalse(tainted(x))
+        i = some_input(x)
+        self.assertTrue(tainted(i))
+
+    def test_taint_vul(self):
+        x = 'taint_vul'
+        self.assertFalse(tainted(x))
+        i = some_input(x)
+        self.assertTrue(tainted(i, vul=XSS))
+        self.assertTrue(tainted(i, vul=SQLI))
+        i = cleanSQLI(i)
+        self.assertTrue(tainted(i, vul=XSS))
+        self.assertFalse(tainted(i, vul=SQLI))
+
+    def test_taint_vul2(self):
+        '''If the givven vul argument is not a valid KEY,
+        return False.'''
+        x = 'taint_vul2'
+        self.assertFalse(tainted(x))
+        i = some_input(x)
+        self.assertFalse(tainted(i, vul=100))
+                        
 class TestSink(unittest.TestCase):
             
     def test_false_all(self):
