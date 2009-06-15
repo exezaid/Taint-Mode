@@ -43,7 +43,9 @@ def ssink(v=None, reached=reached):
         return inner            
     return _ssinc
     
-def tainted(o):
+def tainted(o, vul=None):
+    if vul:
+        return o in TAINTED[v]
     for v, s in TAINTED.items():
         if o in s:
             return True
