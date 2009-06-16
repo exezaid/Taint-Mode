@@ -263,4 +263,28 @@ class STR(str):
         for v,s in TAINTED.items():
             if self in s:
                 s.add(r)
-        return r                 
+        return r
+        
+    def translate(self, table, deletechars=''):
+        r = super(STR, self).translate(table, deletechars)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r      
+        
+    def upper(self):
+        r = super(STR, self).upper()
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+
+    def zfill(self, width):
+        r = super(STR, self).zfill(width)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r              

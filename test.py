@@ -426,7 +426,43 @@ class TestSTR(unittest.TestCase):
         
         i = some_input('clean title this')
         self.assertTrue(saveDB2(cleanSQLI(i.title())))
-                                                                                 
+
+    def test_translate_not_cleaned(self):
+        '''if s is tainted. s.translate(table [, deletechars]) is also tainted.'''
+        
+        i = some_input('translate it')
+        self.assertFalse(saveDB2(i.translate('o'*256)))
+
+    def test_translate(self):
+        '''if s is tainted. s.translate(table [, deletechars]) is also tainted.'''
+        
+        i = some_input('clean title this')
+        self.assertTrue(saveDB2(cleanSQLI(i.translate('o'*256))))
+
+    def test_upper_not_cleaned(self):
+        '''if s is tainted. s.upper() is also tainted.'''
+        
+        i = some_input("not upper")
+        self.assertFalse(saveDB2(i.upper()))
+
+    def test_upper(self):
+        '''if s is tainted. s.upper() is also tainted.'''
+        
+        i = some_input("clean not upper")
+        self.assertTrue(saveDB2(cleanSQLI(i.upper())))                                                                                         
+
+    def test_zfill_not_cleaned(self):
+        '''if s is tainted. s.zfill(width) is also tainted.'''
+        
+        i = some_input("9")
+        self.assertFalse(saveDB2(i.zfill(3)))
+
+    def test_zfill(self):
+        '''if s is tainted. s.zfill(width) is also tainted.'''
+        
+        i = some_input("8")
+        self.assertTrue(saveDB2(cleanSQLI(i.zfill(3))))
+                  
 class TestTAINTED(unittest.TestCase):   
 
     def test_all_set(self):
