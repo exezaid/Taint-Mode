@@ -1,3 +1,8 @@
+'''
+Dynamic Taint Mode for Python.
+User level module.
+Juan Jose Conti <jjconti@gmail.com>
+'''
 KEYS  = [XSS, SQLI] = range(2)
 TAINTED = dict([(x, set()) for x in KEYS])
 
@@ -31,7 +36,8 @@ def ssink(v=None, reached=reached):
     def _ssinc(f):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
-                if not ((set(args) | set(kwargs.values())) & reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
+                if not ((set(args) | set(kwargs.values())) & 
+                           reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
                     return f(*args, **kwargs)
                 else:
                     reached()
@@ -50,7 +56,7 @@ def tainted(o, vul=None):
             return o in vulset
         else:
             return False
-    for v, s in TAINTED.items():
+    for s in TAINTED.values():
         if o in s:
             return True
     return False
@@ -65,7 +71,7 @@ class STR(str):
     def __add__(self, other):
         r = super(STR, self).__add__(other)
         r = STR(r)
-        for v, s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s or other in s:
                 s.add(r)
         return r
@@ -76,7 +82,7 @@ class STR(str):
     def __getslice__(self, i, j):
         r = super(STR, self).__getslice__(i, j)
         r = STR(r)
-        for v, s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r) 
         return r
@@ -84,7 +90,7 @@ class STR(str):
     def __getitem__(self, y):
         r = super(STR, self).__getitem__(y)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -92,7 +98,7 @@ class STR(str):
     def __mod__(self, y):
         r = super(STR, self).__mod__(y)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r    
@@ -100,7 +106,7 @@ class STR(str):
     def __mul__(self, y):
         r = super(STR, self).__mul__(y)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r            
@@ -114,7 +120,7 @@ class STR(str):
     def capitalize(self):
         r = super(STR, self).capitalize()
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -122,7 +128,7 @@ class STR(str):
     def center(self, width, fillchar=' '):
         r = super(STR, self).center(width, fillchar)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -132,7 +138,7 @@ class STR(str):
     def expandtabs(self, tabsize=8):
         r = super(STR, self).expandtabs(tabsize)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r    
@@ -140,7 +146,7 @@ class STR(str):
     def join(self, y):
         r = super(STR, self).join(y)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -148,7 +154,7 @@ class STR(str):
     def ljust(self, width, fillchar=' '):
         r = super(STR, self).ljust(width, fillchar)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -156,7 +162,7 @@ class STR(str):
     def lower(self):
         r = super(STR, self).lower()
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -164,7 +170,7 @@ class STR(str):
     def lstrip(self, chars=' '):
         r = super(STR, self).lstrip(chars)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -172,7 +178,7 @@ class STR(str):
     def partition(self, sep):
         head, sep, tail = super(STR, self).partition(sep)
         head, sep, tail = STR(head), STR(sep), STR(tail)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(head)
                 if sep:
@@ -184,7 +190,7 @@ class STR(str):
     def replace(self, old, new, count=-1):
         r = super(STR, self).replace(old, new, count)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -192,7 +198,7 @@ class STR(str):
     def rjust(self, width, fillchar=' '):
         r = super(STR, self).rjust(width, fillchar)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -200,7 +206,7 @@ class STR(str):
     def rpartition(self, sep):
         head, sep, tail = super(STR, self).rpartition(sep)
         head, sep, tail = STR(head), STR(sep), STR(tail)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(head)
                 if sep:
@@ -212,7 +218,7 @@ class STR(str):
     def rsplit(self, sep=' ', maxsplit=-1):
         aList = super(STR, self).rsplit(sep, maxsplit)
         aList = [STR(l) for l in aList]
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 [s.add(x) for x in aList]
         return aList
@@ -220,7 +226,7 @@ class STR(str):
     def rstrip(self, chars=' '):
         r = super(STR, self).rstrip(chars)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r        
@@ -228,7 +234,7 @@ class STR(str):
     def split(self, sep=' ', maxsplit=-1):
         aList = super(STR, self).split(sep, maxsplit)
         aList = [STR(l) for l in aList]
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 [s.add(x) for x in aList]
         return aList
@@ -236,7 +242,7 @@ class STR(str):
     def splitlines(self, keepends=False):
         aList = super(STR, self).splitlines(keepends)
         aList = [STR(l) for l in aList]
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 [s.add(x) for x in aList]
         return aList
@@ -244,7 +250,7 @@ class STR(str):
     def strip(self, chars=' '):
         r = super(STR, self).strip(chars)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -252,7 +258,7 @@ class STR(str):
     def swapcase(self):
         r = super(STR, self).swapcase()
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -260,7 +266,7 @@ class STR(str):
     def title(self):
         r = super(STR, self).title()
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -268,7 +274,7 @@ class STR(str):
     def translate(self, table, deletechars=''):
         r = super(STR, self).translate(table, deletechars)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r      
@@ -276,7 +282,7 @@ class STR(str):
     def upper(self):
         r = super(STR, self).upper()
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r
@@ -284,7 +290,7 @@ class STR(str):
     def zfill(self, width):
         r = super(STR, self).zfill(width)
         r = STR(r)
-        for v,s in TAINTED.items():
+        for s in TAINTED.values():
             if self in s:
                 s.add(r)
         return r              
