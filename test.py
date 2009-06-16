@@ -38,12 +38,12 @@ def saveDB3(valor):
 # que el orden en que se ejecutan los tests y el hecho de que TAINTED sea
 # global afecte el resultado.
 
-class TestDifferenteVulnerabilities(unittest.TestCase):
+class TestTaintFlow(unittest.TestCase):
 
     def test_tainted(self):
         '''a tainted value reaches a sensitive sink.'''
             
-        i = some_input('a r v r a s s')    # join with tainted value as argument, not suported.)
+        i = some_input('a r v r a s s')
         self.assertFalse(saveDB1(i))
 
     def test_tainted_not_clean_anough(self):
@@ -59,7 +59,7 @@ class TestDifferenteVulnerabilities(unittest.TestCase):
         self.assertTrue(saveDB2(cleanSQLI(i)))
 
 
-class TestTaintFlow(unittest.TestCase):
+class TestSTR(unittest.TestCase):
         
     def test_right_concatenation_not_cleaned(self):
         '''a tainted value is right concatenated with a non tainted value.
@@ -214,13 +214,13 @@ class TestTaintFlow(unittest.TestCase):
         self.assertTrue(saveDB2(cleanSQLI(i.lower())))
 
     def test_lstrip_not_cleaned(self):
-        '''if s is tainted. s.lstrip() is also tainted.'''
+        '''if s is tainted. s.lstrip([chars]) is also tainted.'''
         
         i = some_input("       left spaces")
         self.assertFalse(saveDB2(i.lstrip()))
 
     def test_lstrip(self):
-        '''if s is tainted. s.lstrip() is also tainted.'''
+        '''if s is tainted. s.lstrip([chars]) is also tainted.'''
         
         i = some_input("       left spaces and clean")
         self.assertTrue(saveDB2(cleanSQLI(i.lstrip())))
@@ -270,7 +270,163 @@ class TestTaintFlow(unittest.TestCase):
         self.assertTrue(saveDB2(cleanSQLI(i.replace('_', ' ', 2))))  
 
     # replace with tainted value as argument, not suported.
+    
+    def test_rjust_not_cleaned(self):
+        '''if s is tainted. s.rjust(n) is also tainted.'''
         
+        i = some_input('right just')
+        self.assertFalse(saveDB2(i.rjust(42)))
+
+    def test_rjust(self):
+        '''if s is tainted. s.rjust(n) is also tainted.'''
+        
+        i = some_input('clean right just')
+        self.assertTrue(saveDB2(cleanSQLI(i.rjust(42))))
+        
+    def test_rpartition_not_cleaned(self):
+        '''s.rpartition(sep) -> head, sep, tail. If s is tainted, 
+        head, sep and tail are also tainted.'''
+        
+        i = some_input("rsepa/rated")
+        h, s, t = i.rpartition('/')
+        self.assertFalse(saveDB2(h))
+        self.assertFalse(saveDB2(s))        
+        self.assertFalse(saveDB2(t))
+
+    def test_rpartition(self):
+        '''s.rpartition(sep) -> head, sep, tail. If s is tainted, 
+        head, sep and tail are also tainted.'''
+        
+        i = some_input("clean rsepa/rated")
+        h, s, t = i.rpartition('/')
+        self.assertTrue(saveDB2(cleanSQLI(h)))
+        self.assertTrue(saveDB2(cleanSQLI(s)))        
+        self.assertTrue(saveDB2(cleanSQLI(t)))
+
+    def test_rsplit_not_cleaned(self):
+        '''s.rsplit(sep) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("right/sepa/rated")
+        aList = i.rsplit('/')
+        for l in aList:
+            self.assertFalse(saveDB2(l))
+
+    def test_rsplit(self):
+        '''s.rsplit(sep) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("clean/right/sepa/rated")
+        aList = i.rsplit('/')
+        self.assertTrue(len(aList) == 4)
+        for l in aList:
+            self.assertTrue(saveDB2(cleanSQLI(l)))
+ 
+    def test_rsplit_max(self):
+        '''s.rsplit(sep [, maxsplit]) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("max/clean/right/sepa/rated")
+        aList = i.rsplit('/', 1)
+        self.assertTrue(len(aList) == 2)
+        for l in aList:
+            self.assertTrue(saveDB2(cleanSQLI(l)))
+
+    def test_rstrip_not_cleaned(self):
+        '''If s is tainted, s.rstrip([chars]) is also tainted.'''
+        
+        i = some_input("right strip it     ")
+        self.assertFalse(saveDB2(i.rstrip()))
+
+    def test_rstrip(self):
+        '''If s is tainted, s.rstrip([chars]) is also tainted.'''
+        
+        i = some_input("clean right strip it     ")
+        self.assertTrue(saveDB2(cleanSQLI(i.rstrip())))
+
+    def test_split_not_cleaned(self):
+        '''s.split(sep) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("split/sepa/rated")
+        aList = i.split('/')
+        for l in aList:
+            self.assertFalse(saveDB2(l))
+
+    def test_split(self):
+        '''s.split(sep) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("clean/split/sepa/rated")
+        aList = i.split('/')
+        self.assertTrue(len(aList) == 4)
+        for l in aList:
+            self.assertTrue(saveDB2(cleanSQLI(l)))
+ 
+    def test_split_max(self):
+        '''s.split(sep [, maxsplit]) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("max/clean/split/sepa/rated")
+        aList = i.split('/', 1)
+        self.assertTrue(len(aList) == 2)
+        for l in aList:
+            self.assertTrue(saveDB2(cleanSQLI(l)))
+ 
+    def test_splitlines_not_cleaned(self):
+        '''s.splitlines([keepends]) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("line\nline\nline")
+        aList = i.splitlines()
+        for l in aList:
+            self.assertFalse(saveDB2(l))
+
+    def test_splitlines(self):
+        '''s.splitlines([keepends]) -> list of strings. If s is tainted, 
+        strings in the list are also tainted.'''
+        
+        i = some_input("clean\nline\nline\nline")
+        aList = i.splitlines()
+        for l in aList:
+            self.assertTrue(saveDB2(cleanSQLI(l)))
+
+    def test_strip_not_cleaned(self):
+        '''if s is tainted. s.strip([chars]) is also tainted.'''
+        
+        i = some_input("       leftright spaces       ")
+        self.assertFalse(saveDB2(i.strip()))
+
+    def test_strip(self):
+        '''if s is tainted. s.strip([chars]) is also tainted.'''
+        
+        i = some_input("       leftright spaces and clean       ")
+        self.assertTrue(saveDB2(cleanSQLI(i.strip())))
+
+    def test_swapcase_not_cleaned(self):
+        '''if s is tainted. s.swapcase() is also tainted.'''
+        
+        i = some_input('SwApCaSe')
+        self.assertFalse(saveDB2(i.swapcase()))
+
+    def test_swapcase(self):
+        '''if s is tainted. s.swapcase() is also tainted.'''
+        
+        i = some_input('cLeAn SwApCaSe')
+        self.assertTrue(saveDB2(cleanSQLI(i.swapcase())))
+
+    def test_title_not_cleaned(self):
+        '''if s is tainted. s.title() is also tainted.'''
+        
+        i = some_input('title this')
+        self.assertFalse(saveDB2(i.title()))
+
+    def test_title(self):
+        '''if s is tainted. s.title() is also tainted.'''
+        
+        i = some_input('clean title this')
+        self.assertTrue(saveDB2(cleanSQLI(i.title())))
+                                                                                 
 class TestTAINTED(unittest.TestCase):   
 
     def test_all_set(self):
@@ -290,6 +446,7 @@ class TestTAINTED(unittest.TestCase):
         n = cleanXSS(n)
         self.assertFalse(n in TAINTED[SQLI])
         self.assertFalse(n in TAINTED[XSS])    
+
 
 class TestTainted(unittest.TestCase):
 

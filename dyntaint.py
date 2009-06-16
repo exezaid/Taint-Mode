@@ -187,4 +187,80 @@ class STR(str):
         for v,s in TAINTED.items():
             if self in s:
                 s.add(r)
+        return r
+
+    def rjust(self, width, fillchar=' '):
+        r = super(STR, self).rjust(width, fillchar)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+        
+    def rpartition(self, sep):
+        head, sep, tail = super(STR, self).rpartition(sep)
+        head, sep, tail = STR(head), STR(sep), STR(tail)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(head)
+                if sep:
+                    s.add(sep)
+                if tail:
+                    s.add(tail)
+        return head, sep, tail
+        
+    def rsplit(self, sep=' ', maxsplit=-1):
+        aList = super(STR, self).rsplit(sep, maxsplit)
+        aList = [STR(l) for l in aList]
+        for v,s in TAINTED.items():
+            if self in s:
+                [s.add(x) for x in aList]
+        return aList
+        
+    def rstrip(self, chars=' '):
+        r = super(STR, self).rstrip(chars)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
         return r        
+
+    def split(self, sep=' ', maxsplit=-1):
+        aList = super(STR, self).split(sep, maxsplit)
+        aList = [STR(l) for l in aList]
+        for v,s in TAINTED.items():
+            if self in s:
+                [s.add(x) for x in aList]
+        return aList
+
+    def splitlines(self, keepends=False):
+        aList = super(STR, self).splitlines(keepends)
+        aList = [STR(l) for l in aList]
+        for v,s in TAINTED.items():
+            if self in s:
+                [s.add(x) for x in aList]
+        return aList
+
+    def strip(self, chars=' '):
+        r = super(STR, self).strip(chars)
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+
+    def swapcase(self):
+        r = super(STR, self).swapcase()
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r
+
+    def title(self):
+        r = super(STR, self).title()
+        r = STR(r)
+        for v,s in TAINTED.items():
+            if self in s:
+                s.add(r)
+        return r                 
