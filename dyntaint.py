@@ -3,8 +3,10 @@ Dynamic Taint Mode for Python.
 User level module.
 Juan Jose Conti <jjconti@gmail.com>
 '''
-KEYS  = [XSS, SQLI] = range(2)
+KEYS  = [XSS, SQLI, OSI] = range(3)
 TAINTED = dict([(x, set()) for x in KEYS])
+
+from pprint import pprint
 
 def reached(v=None):
     '''Execute if a tainted value reaches a sensitive sink
@@ -14,6 +16,17 @@ def reached(v=None):
     else:
         print "WARNING ALL"
 
+def untrusted_params(nargs):
+    def _untrusted_params(f):
+        def inner(*args, **kwargs):
+            for p in (set([args[x] for x in nargs]) | set(kwargs.values())):
+                p = STR(p)
+                [s.add(p) for s in TAINTED.values()] # unstrusted for ALL
+            r = f(*args, **kwargs)            
+            return r
+        return inner
+    return _untrusted_param
+    
 def untrusted(f):
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
@@ -21,13 +34,15 @@ def untrusted(f):
         [s.add(r) for s in TAINTED.values()] # unstrusted for ALL
         return r
     return inner
-    
+        
 def cleaner(v):
     def _cleaner(f):    
         def inner(*args, **kwargs):
             global TAINTED
             r = f(*args, **kwargs)
-            TAINTED[v] -= set(args) | set(kwargs.values())
+            #TAINTED[v] -= set(args) | set(kwargs.values())
+            if r in TAINTED[v]:
+                TAINTED[v].remove(r)    #OJO ACA
             return r
         return inner
     return _cleaner
