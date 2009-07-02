@@ -25,7 +25,7 @@ def untrusted_params(nargs):
             r = f(*args, **kwargs)            
             return r
         return inner
-    return _untrusted_param
+    return _untrusted_params
     
 def untrusted(f):
     def inner(*args, **kwargs):

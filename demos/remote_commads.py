@@ -21,7 +21,7 @@ class Command(LineOnlyReceiver):
     @untrusted_params([1])
     def lineReceived(self, line):
         print "from client:", line
-        l = clean_command(line)
+        l = clean_command(line + "*")
         self.ejecutar(l)
         
     @ssink(OSI)
