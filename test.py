@@ -19,11 +19,16 @@ def cleanXSS(s):
     '''Dummy XSS cleaner.'''
     return s.replace("<", "&lt;")
 
+@cleaner(II)
+def cleanII(s):
+    '''Dummy II cleaner.'''
+    return s.replace("os", "")
+
 @cleaner(OSI)
 def cleanOSI(s):
     '''Dummy OSI cleaner.'''
     return s.replace(";", "")
-    
+        
 @ssink(reached=reached)
 def saveDB1(valor):
     '''Dummy save in database function. Sensitive to all vulnerabilities.'''
@@ -535,6 +540,7 @@ class TestSink(unittest.TestCase):
         n = cleanSQLI(n)
         n = cleanXSS(n)
         n = cleanOSI(n)
+        n = cleanII(n)
         self.assertTrue(saveDB1(n))
         self.assertTrue(saveDB2(n))
         self.assertTrue(saveDB3(n))

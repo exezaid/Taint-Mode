@@ -3,7 +3,7 @@ Dynamic Taint Mode for Python.
 User level module.
 Juan Jose Conti <jjconti@gmail.com>
 '''
-KEYS  = [XSS, SQLI, OSI] = range(3)
+KEYS  = [XSS, SQLI, OSI, II] = range(4)
 TAINTED = dict([(x, set()) for x in KEYS])
 
 from pprint import pprint
@@ -19,9 +19,16 @@ def reached(v=None):
 def untrusted_params(nargs):
     def _untrusted_params(f):
         def inner(*args, **kwargs):
-            for p in (set([args[x] for x in nargs]) | set(kwargs.values())):
-                p = STR(p)
-                [s.add(p) for s in TAINTED.values()] # unstrusted for ALL
+            #for p in (set([args[x] for x in nargs]) | set(kwargs.values())):   dict are unhasheables
+            for p in [args[x] for x in nargs] + list(kwargs.values()):
+                if isinstance(p, basestring):
+                    p = STR(p)
+                    [s.add(p) for s in TAINTED.values()] # unstrusted for ALL
+                elif isinstance(p, dict):
+                    for i in p.values():
+                        if isinstance(i, basestring):
+                            i = STR(i)
+                            [s.add(i) for s in TAINTED.values()] # unstrusted for ALL                    
             r = f(*args, **kwargs)            
             return r
         return inner
@@ -55,12 +62,12 @@ def ssink(v=None, reached=reached):
                            reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
                     return f(*args, **kwargs)
                 else:
-                    reached()
+                    return reached()
             else:
                 if not (set(args) | set(kwargs.values())) & TAINTED[v]:
                     return f(*args, **kwargs)
                 else:
-                    reached(v)
+                    return reached(v)
         return inner            
     return _ssinc
     
@@ -308,4 +315,4 @@ class STR(str):
         for s in TAINTED.values():
             if self in s:
                 s.add(r)
-        return r              
+        return r
