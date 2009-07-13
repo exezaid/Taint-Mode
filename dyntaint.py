@@ -35,6 +35,10 @@ def untrusted_params(nargs):
     return _untrusted_params
     
 def untrusted(f):
+    '''
+    Mark a function or method as untrusted.
+    The returned value will me tainted for all the types of taint.
+    '''
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
         r = STR(r)
@@ -43,6 +47,11 @@ def untrusted(f):
     return inner
         
 def cleaner(v):
+    '''
+    Mark a function or methos as capable to clean its input.
+    If v is provied, the returned value is removed from the TAINTED[v] set.
+    If not, it's removed from all the sets int TAINTED.
+    '''
     def _cleaner(f):    
         def inner(*args, **kwargs):
             global TAINTED
@@ -55,6 +64,11 @@ def cleaner(v):
     return _cleaner
     
 def ssink(v=None, reached=reached):
+    '''
+    Mark a function or method as sensitive to tainted data.
+    If it is called with a value present at TAINTED[v] (or any TAINTED set if v is None),
+    it's not executed and reached is executed instead.
+    '''
     def _ssinc(f):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
@@ -72,6 +86,10 @@ def ssink(v=None, reached=reached):
     return _ssinc
     
 def tainted(o, vul=None):
+    '''
+    Tells if a value o is tainted for the given vul. 
+    If vul is None, the value is searched in avery TAINTED set.
+    '''
     if vul:
         vulset = TAINTED.get(vul)
         if vulset:
@@ -83,10 +101,27 @@ def tainted(o, vul=None):
             return True
     return False
 
-# String operations
-# lo siguiente puede hacerse con un decorador. ?
+def taint(var, vul=None):
+    '''
+    Helper function for taint variables.
+    '''
+    var = STR(var)
+    if vul:
+        vulset = TAINTED.get(vul)
+        if vulset:
+            vulset.add(var)
+            return var
+    else:
+        for s in TAINTED.values():
+            s.add(var)
+        return var
+            
+            
 class STR(str):
-
+    '''
+    Extends str class to provide extra capabilities that make it sutable to trac taints
+    over operations.
+    '''
     def __str__(self):
         return self
 
