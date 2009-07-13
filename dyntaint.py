@@ -7,6 +7,7 @@ KEYS  = [XSS, SQLI, OSI, II] = range(4)
 TAINTED = dict([(x, set()) for x in KEYS])
 
 from pprint import pprint
+import pdb
 
 def reached(v=None):
     '''Execute if a tainted value reaches a sensitive sink
@@ -41,8 +42,15 @@ def untrusted(f):
     '''
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
-        r = STR(r)
-        [s.add(r) for s in TAINTED.values()] # unstrusted for ALL
+        if isinstance(r, basestring):
+            r = STR(r)
+            [s.add(r) for s in TAINTED.values()] # unstrusted for ALL
+        elif isinstance(r, dict):
+            for k, i in r.items():
+                if isinstance(i, basestring):
+                    i = STR(i)
+                    r[k] = i    #BUGFIX: esta misma correccion debe hacerse arriba
+                    [s.add(i) for s in TAINTED.values()] # unstrusted for ALL
         return r
     return inner
         
@@ -156,7 +164,7 @@ class STR(str):
         r = super(STR, self).__mod__(y)
         r = STR(r)
         for s in TAINTED.values():
-            if self in s:
+            if self in s or y in s:
                 s.add(r)
         return r    
         
@@ -169,10 +177,10 @@ class STR(str):
         return r            
 
     def __rmod__(self, other):
-        return STR.__mod__(STR(other), self)    # a better way for this?
+        return STR.__mod__(STR(other), self)
         
     def __rmul__(self, other):
-        return STR.__mul__(STR(self), other)    # a better way for this?        
+        return STR.__mul__(STR(self), other)
 
     def capitalize(self):
         r = super(STR, self).capitalize()
