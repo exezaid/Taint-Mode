@@ -1,0 +1,53 @@
+Reporte técnico sobre dyntaint.py
+
+KEYS
+-------
+
+KEYS es una lista de enteros. Cada entero representa un tipo de mancha o
+vulnerabilidad.
+
+KEYS  = [XSS, SQLI, OSI, II] = range(4)
+
+TAINTED
+------------
+
+TAINTED es un diccionario (dict) en donde para cada par (clave, valor), clave es un 
+entero perteneciente a KEYS y valor es un conjunto (set). Los objetos que se 
+encuentran en el conjunto asociado a un tipo de vulnerabilidad, se consideran
+manchados con la misma.
+
+El conjunto TAINTED[XSS] contienen todos los objetos que en un momento dado
+del programa están manchados para XSS.
+
+untrusted
+-------------
+
+untrusted es un decorador utilizado para indicar que los valores retornados por una
+función o método no son confiables. Como los valores no confiables pueden contener 
+potencialmente cualquier tipo de mancha, estos valores son marcados como
+manchados por todos los tipos de machas.
+
+Si se tiene accedo a la definición de la función o método, por ejemplo si es parte de
+nuestro código, el decorador puede aplicarse mediante azúcar sintáctica:
+
+@untrusted
+def desde_el_exterior():
+    pass
+    
+Al usar módulos de terceros, podemos aplicar de todas formas el decorador. El
+siguiente ejemplo es de un programa que utiliza el framework web.py:
+
+import web
+web.input = untrusted(web.input)
+
+Si el valor retornado es un basestring, es convertido al tipo STR y almacenado en todos
+los conjuntos de TAINTED antes de ser retornado. Si el valor es un diccionario, lo
+anterior se realiza con todos sus valores que sean basestring y el nuevo objeto STR
+es también almacenado en el lugar correspondiente en el diccionario.
+
+cleaner
+---------
+
+cleaner es un decorador utilizado para indicar que un método o función tiene la
+habilidad de limpiar manchas en un valor. Este tipo de función es común denominarlas
+como sanitize
