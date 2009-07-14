@@ -32,9 +32,10 @@ def untrusted_params(nargs):
                     p = STR(p)
                     [s.add(p) for s in TAINTED.values()] # unstrusted for ALL
                 elif isinstance(p, dict):
-                    for i in p.values():
+                    for k, i in p.items():
                         if isinstance(i, basestring):
                             i = STR(i)
+                            p[k] = i
                             [s.add(i) for s in TAINTED.values()] # unstrusted for ALL                    
             r = f(*args, **kwargs)            
             return r
@@ -56,7 +57,7 @@ def untrusted(f):
             for k, i in r.items():
                 if isinstance(i, basestring):
                     i = STR(i)
-                    r[k] = i    #BUGFIX: esta misma correccion debe hacerse arriba
+                    r[k] = i
                     [s.add(i) for s in TAINTED.values()] # unstrusted for ALL
         return r
     return inner
