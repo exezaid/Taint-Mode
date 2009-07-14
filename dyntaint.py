@@ -18,6 +18,12 @@ def reached(v=None):
         print "WARNING ALL"
 
 def untrusted_params(nargs):
+    '''
+    Mark a function or method that would recive untrusted values.
+    
+    nargs is a list of positions. Arguments in that position will be tainted for all the 
+    types of taint.
+    '''
     def _untrusted_params(f):
         def inner(*args, **kwargs):
             #for p in (set([args[x] for x in nargs]) | set(kwargs.values())):   dict are unhasheables
@@ -38,7 +44,8 @@ def untrusted_params(nargs):
 def untrusted(f):
     '''
     Mark a function or method as untrusted.
-    The returned value will me tainted for all the types of taint.
+    
+    The returned value will be tainted for all the types of taint.
     '''
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
@@ -57,6 +64,7 @@ def untrusted(f):
 def cleaner(v):
     '''
     Mark a function or methos as capable to clean its input.
+    
     If v is provied, the returned value is removed from the TAINTED[v] set.
     If not, it's removed from all the sets int TAINTED.
     '''
@@ -66,14 +74,15 @@ def cleaner(v):
             r = f(*args, **kwargs)
             #TAINTED[v] -= set(args) | set(kwargs.values())
             if r in TAINTED[v]:
-                TAINTED[v].remove(r)    #OJO ACA
-            return r
-        return inner
+                TAINTED[v].remove(r)    #la logica es que si luego de aplicar una funcion
+            return r                            #limpiadora, el resultado es el mismo y ese estaba
+        return inner                         #en TAINTED, entonces esta bien borrarlo de ahi.
     return _cleaner
     
 def ssink(v=None, reached=reached):
     '''
     Mark a function or method as sensitive to tainted data.
+    
     If it is called with a value present at TAINTED[v] (or any TAINTED set if v is None),
     it's not executed and reached is executed instead.
     '''
@@ -95,7 +104,8 @@ def ssink(v=None, reached=reached):
     
 def tainted(o, vul=None):
     '''
-    Tells if a value o is tainted for the given vul. 
+    Tells if a value o is tainted for the given vul.
+    
     If vul is None, the value is searched in avery TAINTED set.
     '''
     if vul:
@@ -142,7 +152,7 @@ class STR(str):
         return r
 
     def __radd__(self, other):
-        return STR.__add__(STR(other), self)    # a better way for this?
+        return STR.__add__(STR(other), self)
      
     def __getslice__(self, i, j):
         r = super(STR, self).__getslice__(i, j)
