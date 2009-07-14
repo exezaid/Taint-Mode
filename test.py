@@ -147,6 +147,30 @@ class TestSTR(unittest.TestCase):
         i = some_input('clean teke a slice')
         self.assertTrue(saveDB2(cleanSQLI(i[2:5] )))
 
+    def test_mod_not_cleaned(self):
+        '''if s is tainted, s % a is also tainted.'''
+        
+        i = some_input("fomat %s this 1")
+        self.assertFalse(saveDB2(i % 'a'))
+
+    def test_mod(self):
+        '''if s is tainted, s % a is also tainted.'''
+        
+        i = some_input("fomat %s this 2")
+        self.assertTrue(saveDB2(cleanSQLI(i % 'b')))
+
+    def test_rmod_not_cleaned(self):
+        '''if s is tainted, a % s is also tainted.'''
+        
+        i = some_input("ar1")
+        self.assertFalse(saveDB2("%s" % i))
+
+    def test_rmod(self):
+        '''if s is tainted, a % s is also tainted.'''
+        
+        i = some_input("ar2")
+        self.assertTrue(saveDB2(cleanSQLI("%s" % i)))
+                        
     # tests for public str methdos
     
     def test_join_not_cleaned(self):
