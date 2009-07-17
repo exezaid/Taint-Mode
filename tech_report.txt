@@ -32,7 +32,7 @@ nuestro código, el decorador puede aplicarse mediante azúcar sintáctica:
 
 @untrusted
 def desde_el_exterior():
-    pass
+    ...
     
 Al usar módulos de terceros, podemos aplicar de todas formas el decorador. El
 siguiente ejemplo es de un programa que utiliza el framework web.py:
@@ -49,5 +49,95 @@ cleaner
 ---------
 
 cleaner es un decorador utilizado para indicar que un método o función tiene la
-habilidad de limpiar manchas en un valor. Este tipo de función es común denominarlas
-como sanitize
+habilidad de limpiar manchas en un valor.
+
+Por ejemplo, la función texto_plano remueve código HTML de su entrada y retorna
+un nuevo valor limpio:
+
+>>> texto_plano("Esto es <b>negrita</b>")
+'Esto es negrita'
+
+>>> texto_plano("Click <a href="http://www.google.com">here</a>")
+'Click here'
+
+Este tipo de funciones están asociadas a un tipo de vulnerabilidad; por lo tanto la
+forma de utilizar el decorador cleaner es especificando un tipo de mancha. 
+Nuevamente hay dos formas de hacerlo, en la definición:
+
+@cleaner(XSS)
+def texto_plano(input):
+    ...
+
+o antes de empezar a utilizar la función en nuestro programa:
+
+texto_plano = cleaner(XSS)(texto_plano)
+
+ssink
+------
+
+El decorador ssink debe utilizarse para marcar aquellas funciones o métodos que 
+no queremos sean alcanzadas por valores manchados. Los llamamos sumideros
+sensibles o __sensitive sinks__.
+
+Estos sumideros son sensibles a un tipo de vulnerabilidad, es por eso que debe
+especificarse cuando se utiliza el decorador.
+
+Por ejemplo, la función eval de Python es un sumidero sensible a ataques de
+Interpreter Injection. La forma de marcarlo como tal es:
+
+eval = ssink(II)(eval)
+
+El framework web.py nos provee ejemplos de sumideros sensibles a ataques de SQL
+injection:
+
+db = web.database(dbn="sqlite", db=DB_NAME)
+db.delete = ssink(v=SQLI)(db.delete)
+db.select = ssink(v=SQLI)(db.select)
+db.insert = ssink(v=SQLI)(db.insert)
+
+Cómo con los otros decoradores, si el sumidero sensible es definido en nuestro código,
+podemos utilizar azúcar sintánctica:
+
+@ssink(XSS):
+def generar_respuesta(input):
+    ...
+
+unstrusted_args
+----------------------
+
+Algunos frameworks funcionan de la siguiente forma: le piden al programador que 
+escriba cierta función o método de forma tal que luego el framework las utiliza
+para pasarle al programa de usuario los valores recibidos desde el exterior. Twisted,
+el framework para hacer aplicaciones de red, provee un claro ejemplo cuando se
+extiende la clase LineOnlyReceiver:
+
+class MyProtocol(LineOnlyReceiver):
+
+    def lineReceived(self, line):
+        self.doSomething(line)  # line es un valor manchado
+        
+En estos casos, utilizar el decorador untrusted es engorroso o incluso imposible. Es
+recomendable utilizar el decorador untrusted_args, que recibe como argumento una
+lista de posiciones de argumentos manchados. En el ejemplo anterior:
+
+class MyProtocol(LineOnlyReceiver):
+
+    @untrusted_args([1])
+    def lineReceived(self, line):
+        self.doSomething(line)
+        
+Valores no confiables
+----------------------------
+
+Un valor no confiable es aquen devuelto por una función o método marcada con
+@untrusted o aquel/aquellos recibidos como parámetros en una función o método
+marcada con @untrusted_args.
+
+Para determinar que valores son agregados a los conjuntos TAINTED, es decir, qué
+valores son marchados, se aplica la siguiente regla:
+
+1) Si el valor no confiable es un string, se utiliza para crear una instancia de STR,
+este objeto es guardado en TAINTED
+Si el valor no con.
+2) Si es un dict
+3) Si es una lista o tupla

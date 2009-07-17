@@ -619,6 +619,70 @@ class TaintOperations(unittest.TestCase):
 
     #MOD y falta MOD en testSTR
     #JOIN
+    
+class UnstrustedDecorator(unittest.TestCase):
+
+    def test_untrusted_string(self):
+        @untrusted
+        def uf():
+            return "untrusted"
+        u = uf()
+        self.assertTrue(tainted(u))
+
+    def test_untrusted_dict(self):
+        @untrusted
+        def uf():
+            return {0: "untrusted1", 1: "untrusted2"}
+        u = uf()
+        self.assertTrue(tainted(u[0]))
+        self.assertTrue(isinstance(u[0], STR))
+        self.assertTrue(tainted(u[1]))                            
+        self.assertTrue(isinstance(u[1], STR))
+        
+    def test_untrusted_list(self):
+        @untrusted
+        def uf():
+            return ["untrustedA", "untrustedB"]
+        u = uf()
+        self.assertTrue(tainted(u[0]))
+        self.assertTrue(isinstance(u[0], STR))        
+        self.assertTrue(tainted(u[1]))
+        self.assertTrue(isinstance(u[1], STR))        
+
+    def test_untrusted_dict_with_list(self):
+        @untrusted
+        def uf():
+            return {0: "untrustedC", 1: ["untrustedD"]}
+        u = uf()
+        self.assertTrue(tainted(u[0]))
+        self.assertTrue(isinstance(u[0], STR))        
+        self.assertTrue(tainted(u[1][0]))
+        self.assertTrue(isinstance(u[1][0], STR))
+
+    def test_untrusted_list_with_dict(self):
+        @untrusted
+        def uf():
+            return ["unstrustedE", {0: "untrustedF"}]
+        u = uf()
+        self.assertTrue(tainted(u[0]))
+        self.assertTrue(isinstance(u[0], STR))        
+        self.assertTrue(tainted(u[1][0]))
+        self.assertTrue(isinstance(u[1][0], STR))
+        
+    def test_untrusted_twisted_structure(self):
+        @untrusted
+        def uf():
+            return ["unstrustedG", {0: "untrustedH", 1: ["untrustedI", "untrustedJ"]}]
+        u = uf()
+        self.assertTrue(tainted(u[0]))
+        self.assertTrue(isinstance(u[0], STR))        
+        self.assertTrue(tainted(u[1][0]))
+        self.assertTrue(isinstance(u[1][0], STR))                 
+        self.assertTrue(tainted(u[1][1][0]))
+        self.assertTrue(isinstance(u[1][0][0], STR))           
+        self.assertTrue(tainted(u[1][1][1]))
+        self.assertTrue(isinstance(u[1][0][1], STR))           
+
 if __name__ == '__main__':
     unittest.main()
 

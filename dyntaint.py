@@ -17,14 +17,14 @@ def reached(v=None):
     else:
         print "WARNING ALL"
 
-def untrusted_params(nargs):
+def untrusted_args(nargs):
     '''
     Mark a function or method that would recive untrusted values.
     
     nargs is a list of positions. Arguments in that position will be tainted for all the 
     types of taint.
     '''
-    def _untrusted_params(f):
+    def _untrusted_args(f):
         def inner(*args, **kwargs):
             #for p in (set([args[x] for x in nargs]) | set(kwargs.values())):   dict are unhasheables
             for p in [args[x] for x in nargs] + list(kwargs.values()):
@@ -37,7 +37,7 @@ def untrusted_params(nargs):
                             i = STR(i)
                             p[k] = i
                             [s.add(i) for s in TAINTED.values()] # unstrusted for ALL                    
-            r = f(*args, **kwargs)            
+            r = f(*args, **kwargs)  # ERROR, no se debe ejecutar con los valores viejos, sino con los STR
             return r
         return inner
     return _untrusted_params
@@ -48,18 +48,28 @@ def untrusted(f):
     
     The returned value will be tainted for all the types of taint.
     '''
+    def t_string(s):
+        return taint(s)
+        
+    def t_list(l):
+        return [t_(x) for x in l]
+
+    def t_dict(d):
+        return dict([(k, t_(v)) for k,v in d.items()])
+        
+    def t_(o):
+        if isinstance(o, basestring):
+            return t_string(o)
+        elif isinstance(o, list):
+            return t_list(o)
+        elif isinstance(o, dict):
+            return t_dict(o)
+        else:
+            return o
+            
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
-        if isinstance(r, basestring):
-            r = STR(r)
-            [s.add(r) for s in TAINTED.values()] # unstrusted for ALL
-        elif isinstance(r, dict):
-            for k, i in r.items():
-                if isinstance(i, basestring):
-                    i = STR(i)
-                    r[k] = i
-                    [s.add(i) for s in TAINTED.values()] # unstrusted for ALL
-        return r
+        return t_(r)
     return inner
         
 def cleaner(v):
