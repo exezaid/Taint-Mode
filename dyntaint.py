@@ -21,22 +21,21 @@ def untrusted_args(nargs):
     '''
     Mark a function or method that would recive untrusted values.
     
-    nargs is a list of positions. Arguments in that position will be tainted for all the 
-    types of taint.
+    nargs is a list of positions. Arguments in that position will be 
+    tainted for all the types of taint.
     '''
     def _untrusted_args(f):
         def inner(*args, **kwargs):
-            #for p in (set([args[x] for x in nargs]) | set(kwargs.values())):   dict are unhasheables
             for p in [args[x] for x in nargs] + list(kwargs.values()):
                 if isinstance(p, basestring):
                     p = STR(p)
-                    [s.add(p) for s in TAINTED.values()] # unstrusted for ALL
+                    [s.add(p) for s in TAINTED.values()]
                 elif isinstance(p, dict):
                     for k, i in p.items():
                         if isinstance(i, basestring):
                             i = STR(i)
                             p[k] = i
-                            [s.add(i) for s in TAINTED.values()] # unstrusted for ALL                    
+                            [s.add(i) for s in TAINTED.values()]
             r = f(*args, **kwargs)  # ERROR, no se debe ejecutar con los valores viejos, sino con los STR
             return r
         return inner
@@ -83,18 +82,18 @@ def cleaner(v):
         def inner(*args, **kwargs):
             global TAINTED
             r = f(*args, **kwargs)
-            #TAINTED[v] -= set(args) | set(kwargs.values())
             if r in TAINTED[v]:
-                TAINTED[v].remove(r)    #la logica es que si luego de aplicar una funcion
-            return r                            #limpiadora, el resultado es el mismo y ese estaba
-        return inner                         #en TAINTED, entonces esta bien borrarlo de ahi.
-    return _cleaner
+                TAINTED[v].remove(r)  # la logica es que si luego de aplicar
+            return r                  # una funcion limpiadora, el resultado es
+        return inner                  # el mismo y ese estaba en TAINTED, 
+    return _cleaner                   # entonces esta bien borrarlo de ahi.
     
 def ssink(v=None, reached=reached):
     '''
     Mark a function or method as sensitive to tainted data.
     
-    If it is called with a value present at TAINTED[v] (or any TAINTED set if v is None),
+    If it is called with a value present at TAINTED[v]
+    (or any TAINTED set if v is None),
     it's not executed and reached is executed instead.
     '''
     def _ssinc(f):
@@ -148,8 +147,8 @@ def taint(var, vul=None):
             
 class STR(str):
     '''
-    Extends str class to provide extra capabilities that make it sutable to trac taints
-    over operations.
+    Extends str class to provide extra capabilities that make it sutable to
+    trac taints over operations.
     '''
     def __str__(self):
         return self

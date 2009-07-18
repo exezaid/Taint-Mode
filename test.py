@@ -63,7 +63,8 @@ class TestTaintFlow(unittest.TestCase):
         self.assertFalse(saveDB1(cleanSQLI(i)))
 
     def test_not_tainted(self):
-        '''an SQLI-cleaned value reaches a SQLI-sensitive sink. It's all right.'''
+        '''an SQLI-cleaned value reaches a SQLI-sensitive sink.
+        It's all right.'''
             
         i = some_input('a s c v r a s s s i a r')
         self.assertTrue(saveDB2(cleanSQLI(i)))
@@ -462,13 +463,15 @@ class TestSTR(unittest.TestCase):
         self.assertTrue(saveDB2(cleanSQLI(i.title())))
 
     def test_translate_not_cleaned(self):
-        '''if s is tainted. s.translate(table [, deletechars]) is also tainted.'''
+        '''if s is tainted. s.translate(table [, deletechars])
+        is also tainted.'''
         
         i = some_input('translate it')
         self.assertFalse(saveDB2(i.translate('o'*256)))
 
     def test_translate(self):
-        '''if s is tainted. s.translate(table [, deletechars]) is also tainted.'''
+        '''if s is tainted. s.translate(table [, deletechars])
+           is also tainted.'''
         
         i = some_input('clean title this')
         self.assertTrue(saveDB2(cleanSQLI(i.translate('o'*256))))
@@ -672,7 +675,8 @@ class UnstrustedDecorator(unittest.TestCase):
     def test_untrusted_twisted_structure(self):
         @untrusted
         def uf():
-            return ["unstrustedG", {0: "untrustedH", 1: ["untrustedI", "untrustedJ"]}]
+            return ["unstrustedG", {0: "untrustedH", 
+                                    1: ["untrustedI", "untrustedJ"]}]
         u = uf()
         self.assertTrue(tainted(u[0]))
         self.assertTrue(isinstance(u[0], STR))        
