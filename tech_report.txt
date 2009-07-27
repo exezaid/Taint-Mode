@@ -104,6 +104,22 @@ código, podemos utilizar azúcar sintánctica:
 def generar_respuesta(input):
     ...
 
+El decorador también puede utilizarse sin especificar ninguna vulnerabilidad.
+En este caso, el sumidero es marcado como sensible a todos los tipos de
+vulnerabilidad, aunque este no es un caso de uso muy usado:
+
+@ssink():
+def muy_sensible(input):
+    ...
+    
+reached
+-------
+
+El decorador ssink tiene un argumento opcional llamado reached. Cuando el
+sumidero es llamado con un argumento manchado con la vulnerabilidad a la que
+este es sensible, el sumidero no es ejecutado y en su lugar se ejecuta la
+función reached.
+
 unstrusted_args
 ---------------
 
