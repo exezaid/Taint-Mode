@@ -534,11 +534,11 @@ class TestTainted(unittest.TestCase):
         x = 'taint_vul'
         self.assertFalse(tainted(x))
         i = some_input(x)
-        self.assertTrue(tainted(i, vul=XSS))
-        self.assertTrue(tainted(i, vul=SQLI))
+        self.assertTrue(tainted(i, v=XSS))
+        self.assertTrue(tainted(i, v=SQLI))
         i = cleanSQLI(i)
-        self.assertTrue(tainted(i, vul=XSS))
-        self.assertFalse(tainted(i, vul=SQLI))
+        self.assertTrue(tainted(i, v=XSS))
+        self.assertFalse(tainted(i, v=SQLI))
 
     def test_taint_vul2(self):
         '''If the givven vul argument is not a valid KEY,
@@ -546,7 +546,7 @@ class TestTainted(unittest.TestCase):
         x = 'taint_vul2'
         self.assertFalse(tainted(x))
         i = some_input(x)
-        self.assertFalse(tainted(i, vul=100))
+        self.assertFalse(tainted(i, v=100))
                         
 class TestSink(unittest.TestCase):
             
@@ -580,16 +580,16 @@ class TaintFunction(unittest.TestCase):
         b = "will be sqli tainted"
         taint(a, XSS)
         taint(b, SQLI)
-        self.assertTrue(tainted(a, vul=XSS))
-        self.assertTrue(tainted(a, vul=XSS))
+        self.assertTrue(tainted(a, v=XSS))
+        self.assertTrue(tainted(a, v=XSS))
 
     def test_taint_values(self):
         a = "will be xss tainted"
         b = "will be sqli tainted"
         taint(a, XSS)
         taint(b, SQLI)
-        self.assertTrue(tainted(a, vul=XSS))
-        self.assertTrue(tainted(a, vul=XSS))
+        self.assertTrue(tainted(a, v=XSS))
+        self.assertTrue(tainted(a, v=XSS))
 
 class TaintOperations(unittest.TestCase):
 
@@ -599,8 +599,8 @@ class TaintOperations(unittest.TestCase):
         a = taint(a, XSS)
         b = taint(b, SQLI)
         r = a + b
-        self.assertTrue(tainted(r, vul=XSS))
-        self.assertTrue(tainted(r, vul=SQLI))
+        self.assertTrue(tainted(r, v=XSS))
+        self.assertTrue(tainted(r, v=SQLI))
 
     def test_radd_2taints(self):        
         a = "will be xss tainted"
@@ -608,8 +608,8 @@ class TaintOperations(unittest.TestCase):
         a = taint(a, XSS)
         b = taint(b, SQLI)
         r = b + a
-        self.assertTrue(tainted(r, vul=XSS))
-        self.assertTrue(tainted(r, vul=SQLI))        
+        self.assertTrue(tainted(r, v=XSS))
+        self.assertTrue(tainted(r, v=SQLI))        
 
     def test_mod_2taints(self):        
         a = "will be xss tainted"
@@ -617,8 +617,8 @@ class TaintOperations(unittest.TestCase):
         a = taint(a, XSS)
         b = taint(b, SQLI)
         r = b + a
-        self.assertTrue(tainted(r, vul=XSS))
-        self.assertTrue(tainted(r, vul=SQLI))   
+        self.assertTrue(tainted(r, v=XSS))
+        self.assertTrue(tainted(r, v=SQLI))   
 
     #MOD y falta MOD en testSTR
     #JOIN

@@ -81,7 +81,7 @@ def cleaner(v):
             if r in TAINTED[v]:
                 TAINTED[v].remove(r)  # la logica es que si luego de aplicar
             return r                  # una funcion limpiadora, el resultado es
-        return inner                  # el mismo y ese estaba en TAINTED, 
+        return inner                  # el mismo y este estaba en TAINTED, 
     return _cleaner                   # entonces esta bien borrarlo de ahi.
     
 def ssink(v=None, reached=reached):
@@ -96,7 +96,8 @@ def ssink(v=None, reached=reached):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
                 if not ((set(args) | set(kwargs.values())) & 
-                           reduce(lambda a, b: a | b, [x for x in TAINTED.values()], set())):
+                           reduce(lambda a, b: a | b, 
+                                 [x for x in TAINTED.values()], set())):
                     return f(*args, **kwargs)
                 else:
                     return reached()
@@ -108,16 +109,16 @@ def ssink(v=None, reached=reached):
         return inner            
     return _ssinc
     
-def tainted(o, vul=None):
+def tainted(o, v=None):
     '''
     Tells if a value o is tainted for the given vul.
     
     If vul is None, the value is searched in avery TAINTED set.
     '''
-    if vul:
-        vulset = TAINTED.get(vul)
-        if vulset:
-            return o in vulset
+    if v:
+        vset = TAINTED.get(v)
+        if vset:
+            return o in vset
         else:
             return False
     for s in TAINTED.values():
@@ -125,15 +126,15 @@ def tainted(o, vul=None):
             return True
     return False
 
-def taint(var, vul=None):
+def taint(var, v=None):
     '''
     Helper function for taint variables.
     '''
     var = STR(var)
-    if vul:
-        vulset = TAINTED.get(vul)
-        if vulset:
-            vulset.add(var)
+    if v:
+        vset = TAINTED.get(v)
+        if vset:
+            vset.add(var)
             return var
     else:
         for s in TAINTED.values():
