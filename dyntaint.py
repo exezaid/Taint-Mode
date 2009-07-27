@@ -1,4 +1,4 @@
-'''
+﻿'''
 Dynamic Taint Mode for Python.
 User level module.
 Juan Jose Conti <jjconti@gmail.com>
@@ -17,26 +17,41 @@ def reached(v=None):
     else:
         print "WARNING ALL"
 
-def untrusted_args(nargs):
+def t_string(s):
+	return taint(s)
+	
+def t_list(l):
+	return [t_(x) for x in l]
+
+def t_dict(d):
+	return dict([(k, t_(v)) for k,v in d.items()])
+	
+def t_(o):
+	if isinstance(o, basestring):
+		return t_string(o)
+	elif isinstance(o, list):
+		return t_list(o)
+	elif isinstance(o, dict):
+		return t_dict(o)
+	else:
+		return o
+			
+def untrusted_args(nargs=[], nkwargs=[]):
     '''
     Mark a function or method that would recive untrusted values.
     
-    nargs is a list of positions. Arguments in that position will be 
+    nargs is a list of positions. Positional arguments in that position will be 
     tainted for all the types of taint.
+	nkwargs is a list of strings. Keyword arguments for those keys will be
+	tainted for all the types of taint.
     '''
     def _untrusted_args(f):
         def inner(*args, **kwargs):
-            for p in [args[x] for x in nargs] + list(kwargs.values()):
-                if isinstance(p, basestring):
-                    p = STR(p)
-                    [s.add(p) for s in TAINTED.values()]
-                elif isinstance(p, dict):
-                    for k, i in p.items():
-                        if isinstance(i, basestring):
-                            i = STR(i)
-                            p[k] = i
-                            [s.add(i) for s in TAINTED.values()]
-            r = f(*args, **kwargs)  # ERROR, no se debe ejecutar con los valores viejos, sino con los STR
+            for n in nargs:
+                args[n] = t_(args[n])
+            for n in nkwargs:
+                kwargs[n] = t_(kwargs[n])
+            r = f(*args, **kwargs)
             return r
         return inner
     return _untrusted_params
@@ -46,26 +61,7 @@ def untrusted(f):
     Mark a function or method as untrusted.
     
     The returned value will be tainted for all the types of taint.
-    '''
-    def t_string(s):
-        return taint(s)
-        
-    def t_list(l):
-        return [t_(x) for x in l]
-
-    def t_dict(d):
-        return dict([(k, t_(v)) for k,v in d.items()])
-        
-    def t_(o):
-        if isinstance(o, basestring):
-            return t_string(o)
-        elif isinstance(o, list):
-            return t_list(o)
-        elif isinstance(o, dict):
-            return t_dict(o)
-        else:
-            return o
-            
+    '''     
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
         return t_(r)

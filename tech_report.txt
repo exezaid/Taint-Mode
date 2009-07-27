@@ -120,15 +120,16 @@ class MyProtocol(LineOnlyReceiver):
         
 En estos casos, utilizar el decorador untrusted es engorroso o incluso
 imposible. Es recomendable utilizar el decorador untrusted_args, que recibe
-como argumento una lista de posiciones de argumentos manchados. En el ejemplo
-anterior:
+como argumento (opcionalmente) una lista de posiciones de argumentos no
+confiables y una lista de argumentos de palabra clave. El parámetro line del
+ejempo anterior puede marcarse como no confiable así:
 
 class MyProtocol(LineOnlyReceiver):
 
     @untrusted_args([1])
     def lineReceived(self, line):
         self.doSomething(line)
-        
+
 Valores no confiables
 ---------------------
 
