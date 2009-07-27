@@ -1,7 +1,7 @@
 Reporte técnico sobre dyntaint.py
 
 KEYS
--------
+----
 
 KEYS es una lista de enteros. Cada entero representa un tipo de mancha o
 vulnerabilidad.
@@ -9,26 +9,27 @@ vulnerabilidad.
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
 
 TAINTED
-------------
+-------
 
-TAINTED es un diccionario (dict) en donde para cada par (clave, valor), clave es un 
-entero perteneciente a KEYS y valor es un conjunto (set). Los objetos que se 
-encuentran en el conjunto asociado a un tipo de vulnerabilidad, se consideran
-manchados con la misma.
+TAINTED es un diccionario (dict) en donde para cada par (clave, valor), clave
+es un entero perteneciente a KEYS y valor es un conjunto (set). Los objetos que
+se encuentran en el conjunto asociado a un tipo de vulnerabilidad, se
+consideran manchados con la misma.
 
 El conjunto TAINTED[XSS] contienen todos los objetos que en un momento dado
 del programa están manchados para XSS.
 
 untrusted
--------------
+---------
 
-untrusted es un decorador utilizado para indicar que los valores retornados por una
-función o método no son confiables. Como los valores no confiables pueden contener 
-potencialmente cualquier tipo de mancha, estos valores son marcados como
-manchados por todos los tipos de machas.
+untrusted es un decorador utilizado para indicar que los valores retornados por
+una función o método no son confiables. Como los valores no confiables pueden
+contener potencialmente cualquier tipo de mancha, estos valores son marcados
+como manchados por todos los tipos de machas.
 
-Si se tiene accedo a la definición de la función o método, por ejemplo si es parte de
-nuestro código, el decorador puede aplicarse mediante azúcar sintáctica:
+Si se tiene accedo a la definición de la función o método, por ejemplo si es
+parte de nuestro código, el decorador puede aplicarse mediante azúcar
+sintáctica:
 
 @untrusted
 def desde_el_exterior():
@@ -40,13 +41,14 @@ siguiente ejemplo es de un programa que utiliza el framework web.py:
 import web
 web.input = untrusted(web.input)
 
-Si el valor retornado es un basestring, es convertido al tipo STR y almacenado en todos
-los conjuntos de TAINTED antes de ser retornado. Si el valor es un diccionario, lo
-anterior se realiza con todos sus valores que sean basestring y el nuevo objeto STR
-es también almacenado en el lugar correspondiente en el diccionario.
+Si el valor retornado es un basestring, es convertido al tipo STR y almacenado
+en todos los conjuntos de TAINTED antes de ser retornado. Si el valor es un
+diccionario, lo anterior se realiza con todos sus valores que sean basestring y
+el nuevo objeto STR es también almacenado en el lugar correspondiente en el
+diccionario.
 
 cleaner
----------
+-------
 
 cleaner es un decorador utilizado para indicar que un método o función tiene la
 habilidad de limpiar manchas en un valor.
@@ -60,9 +62,9 @@ un nuevo valor limpio:
 >>> texto_plano("Click <a href="http://www.google.com">here</a>")
 'Click here'
 
-Este tipo de funciones están asociadas a un tipo de vulnerabilidad; por lo tanto la
-forma de utilizar el decorador cleaner es especificando un tipo de mancha. 
-Nuevamente hay dos formas de hacerlo, en la definición:
+Este tipo de funciones están asociadas a un tipo de vulnerabilidad; por lo
+tanto la forma de utilizar el decorador cleaner es especificando un tipo de
+mancha. Nuevamente hay dos formas de hacerlo, en la definición:
 
 @cleaner(XSS)
 def texto_plano(input):
@@ -95,30 +97,31 @@ db.delete = ssink(v=SQLI)(db.delete)
 db.select = ssink(v=SQLI)(db.select)
 db.insert = ssink(v=SQLI)(db.insert)
 
-Cómo con los otros decoradores, si el sumidero sensible es definido en nuestro código,
-podemos utilizar azúcar sintánctica:
+Cómo con los otros decoradores, si el sumidero sensible es definido en nuestro
+código, podemos utilizar azúcar sintánctica:
 
 @ssink(XSS):
 def generar_respuesta(input):
     ...
 
 unstrusted_args
-----------------------
+---------------
 
 Algunos frameworks funcionan de la siguiente forma: le piden al programador que 
 escriba cierta función o método de forma tal que luego el framework las utiliza
-para pasarle al programa de usuario los valores recibidos desde el exterior. Twisted,
-el framework para hacer aplicaciones de red, provee un claro ejemplo cuando se
-extiende la clase LineOnlyReceiver:
+para pasarle al programa de usuario los valores recibidos desde el exterior.
+Twisted, el framework para hacer aplicaciones de red, provee un claro ejemplo
+cuando se extiende la clase LineOnlyReceiver:
 
 class MyProtocol(LineOnlyReceiver):
 
     def lineReceived(self, line):
         self.doSomething(line)  # line es un valor manchado
         
-En estos casos, utilizar el decorador untrusted es engorroso o incluso imposible. Es
-recomendable utilizar el decorador untrusted_args, que recibe como argumento una
-lista de posiciones de argumentos manchados. En el ejemplo anterior:
+En estos casos, utilizar el decorador untrusted es engorroso o incluso
+imposible. Es recomendable utilizar el decorador untrusted_args, que recibe
+como argumento una lista de posiciones de argumentos manchados. En el ejemplo
+anterior:
 
 class MyProtocol(LineOnlyReceiver):
 
@@ -127,17 +130,59 @@ class MyProtocol(LineOnlyReceiver):
         self.doSomething(line)
         
 Valores no confiables
-----------------------------
+---------------------
 
 Un valor no confiable es aquen devuelto por una función o método marcada con
 @untrusted o aquel/aquellos recibidos como parámetros en una función o método
 marcada con @untrusted_args.
 
-Para determinar que valores son agregados a los conjuntos TAINTED, es decir, qué
-valores son marchados, se aplica la siguiente regla:
+Para determinar que valores son agregados a los conjuntos TAINTED, es decir,
+qué valores son marchados, se aplica la siguiente regla:
 
-1) Si el valor no confiable es un string, se utiliza para crear una instancia de STR,
-este objeto es guardado en TAINTED
-Si el valor no con.
-2) Si es un dict
-3) Si es una lista o tupla
+1) Si el valor no confiable es un string, se utiliza para crear una instancia
+de STR, este objeto es guardado en TAINTED.
+2) Si el valor es una lista. Se apica este algoritmo a todos los elementos de
+la lista y se retorna una nueva lista con el resultado de cada aplicación.
+3) Si el valor es un diccionario. Se aplica este algoritmo a todos los valores
+del diccionario y se retorna un nuevo diccionario con las claves originales y
+los resultados de cada aplicaicón como valores.
+
+Veamos unos ejemplos utilizando @untrusted:
+
+>>> @untrusted
+... def ej1():
+...     return "unString"
+...
+>>> ej1()
+'unString'
+>>> type(ej1())
+<class 'dyntaint.STR'>
+>>> @untrusted
+... def ej2():
+...     return ["string1", "string2"]
+...
+>>> e2 = ej2()
+>>> e2
+['string1', 'string2']
+>>> type(e2[0])
+<class 'dyntaint.STR'>
+>>> type(e2[1])
+<class 'dyntaint.STR'>
+>>> @untrusted
+... def ej3():
+...     return {1: "uno", 2: "dos"}
+...
+>>> e3 = ej3()
+>>> e3
+{1: 'uno', 2: 'dos'}
+>>> type(e3[1])
+<class 'dyntaint.STR'>
+>>> type(e3[2])
+<class 'dyntaint.STR'>
+>>> TAINTED[0]
+set(['dos', 'unString', 'uno', 'string2', 'string1'])
+>>> tainted(e3[2])
+True
+>>> tainted(e2[1])
+True
+>>>
