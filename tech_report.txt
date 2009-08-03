@@ -7,7 +7,9 @@ KEYS
 KEYS es una lista de enteros. Cada entero representa un tipo de mancha o
 vulnerabilidad.
 
-KEYS  = [XSS, SQLI, OSI, II] = range(4)
+.. code-block:: python
+    
+    KEYS  = [XSS, SQLI, OSI, II] = range(4)
 
 TAINTED
 -------

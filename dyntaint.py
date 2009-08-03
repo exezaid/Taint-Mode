@@ -8,15 +8,28 @@ TAINTED = dict([(x, set()) for x in KEYS])
 
 from pprint import pprint
 import pdb
+import inspect
+import sys
 
-def reached(v=None):
-    '''Execute if a tainted value reaches a sensitive sink
-    for the vulnerability v. '''
-    if v:
-        print "WARNING", v
-    else:
-        print "WARNING ALL"
-
+def reached(t, v=None):
+    '''
+    Execute if a tainted value reaches a sensitive sink
+    for the vulnerability v.
+    '''
+    frame = sys._getframe(2)
+    filename = inspect.getfile(frame)
+    lno = frame.f_lineno - 1
+    print "=" * 79
+    print "Violacion en la linea %d del archivo %s." % (lno, filename)
+    #print "Valor manchado: %s." % t
+    print '-' * 79
+    lineas = inspect.findsource(frame)[0]
+    lineas = ['    %s' % l for l in lineas]
+    lineas[lno] = '--> ' + lineas[lno][4:]
+    lineas = lineas[lno - 3: lno + 3]
+    print "".join(lineas) 
+    print "=" * 79
+    
 def t_string(s):
 	return taint(s)
 	
@@ -94,18 +107,21 @@ def ssink(v=None, reached=reached):
     '''
     def _ssinc(f):
         def inner(*args, **kwargs):
+            allargs = set(args) | set(kwargs.values())
             if v is None:   # sensitive to ALL
-                if not ((set(args) | set(kwargs.values())) & 
-                           reduce(lambda a, b: a | b, 
-                                 [x for x in TAINTED.values()], set())):
-                    return f(*args, **kwargs)
+                tainted = reduce(lambda a, b: a | b, 
+                                 [x for x in TAINTED.values()], set())
+                for a in allargs:
+                    if a in tainted:
+                        return reached(a)
                 else:
-                    return reached()
+                    return f(*args, **kwargs)
             else:
-                if not (set(args) | set(kwargs.values())) & TAINTED[v]:
-                    return f(*args, **kwargs)
+                for a in allargs:
+                    if a in TAINTED[v]:
+                        return reached(a, v=v)
                 else:
-                    return reached(v)
+                    return f(*args, **kwargs)
         return inner            
     return _ssinc
     
