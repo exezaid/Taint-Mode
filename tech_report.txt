@@ -141,6 +141,10 @@ sumidero es llamado con un argumento manchado con la vulnerabilidad a la que
 este es sensible, el sumidero no es ejecutado y en su lugar se ejecuta la
 función reached.
 
+Se provee una implementación por defecto que alerta de la violación ocurrida
+y da información para encontrar el error.
+
+
 unstrusted_args
 ---------------
 

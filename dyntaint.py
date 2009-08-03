@@ -20,8 +20,8 @@ def reached(t, v=None):
     filename = inspect.getfile(frame)
     lno = frame.f_lineno - 1
     print "=" * 79
-    print "Violacion en la linea %d del archivo %s." % (lno, filename)
-    #print "Valor manchado: %s." % t
+    print "Violacion en la linea %d del archivo %s" % (lno, filename)
+    print "Valor manchado: %s" % t
     print '-' * 79
     lineas = inspect.findsource(frame)[0]
     lineas = ['    %s' % l for l in lineas]
@@ -164,7 +164,8 @@ class STR(str):
     trac taints over operations.
     '''
     def __str__(self):
-        return self
+        return super(STR, self).__str__()   # REVISAR si esto no proboca
+                                            # un error al perder la clase del o
 
     def __add__(self, other):
         r = super(STR, self).__add__(other)
