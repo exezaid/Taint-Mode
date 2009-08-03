@@ -18,13 +18,14 @@ def reached(t, v=None):
     '''
     frame = sys._getframe(2)
     filename = inspect.getfile(frame)
-    lno = frame.f_lineno - 1
+    lno = frame.f_lineno
     print "=" * 79
     print "Violacion en la linea %d del archivo %s" % (lno, filename)
     print "Valor manchado: %s" % t
     print '-' * 79
     lineas = inspect.findsource(frame)[0]
     lineas = ['    %s' % l for l in lineas]
+    lno = lno - 1
     lineas[lno] = '--> ' + lineas[lno][4:]
     lineas = lineas[lno - 3: lno + 3]
     print "".join(lineas) 
