@@ -38,7 +38,10 @@ def t_list(l):
 	return [t_(x) for x in l]
 
 def t_dict(d):
-	return dict([(k, t_(v)) for k,v in d.items()])
+	#return dict([(k, t_(v)) for k,v in d.items()])
+	klass = type(d) # es comun que los frameworks extiendan dict con 
+	                # nuevos metodos, como en web.py
+	return klass([(k, t_(v)) for k,v in d.items()])
 	
 def t_(o):
 	if isinstance(o, basestring):
