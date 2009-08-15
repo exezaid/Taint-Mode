@@ -21,7 +21,7 @@ def reached(t, v=None):
     Execute if a tainted value reaches a sensitive sink
     for the vulnerability v.
     '''
-    frame = sys._getframe(2)
+    frame = sys._getframe(3)
     filename = inspect.getfile(frame)
     lno = frame.f_lineno
     print "=" * 79
@@ -119,7 +119,11 @@ def ssink(v=None, reached=reached):
         allargs = set(args) | set(kwargs.values())
         for a in allargs:
             if a in tainted:
-                return reached(a)
+                if ENDS:
+                    return reached(a)
+                else:
+                    reached(a)
+                    return f(*args, **kwargs)                    
         else:
             return f(*args, **kwargs)
             
