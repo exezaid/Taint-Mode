@@ -3,6 +3,7 @@ Dynamic Taint Mode for Python.
 User level module.
 Juan Jose Conti <jjconti@gmail.com>
 '''
+ENDS = False
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
 TAINTED = dict([(x, set()) for x in KEYS])
 
@@ -11,6 +12,10 @@ import pdb
 import inspect
 import sys
 
+def ends_execution(b=True):
+    global ENDS
+    ENDS = b
+    
 def reached(t, v=None):
     '''
     Execute if a tainted value reaches a sensitive sink
@@ -110,23 +115,22 @@ def ssink(v=None, reached=reached):
     (or any TAINTED set if v is None),
     it's not executed and reached is executed instead.
     '''
+    def _solve(tainted, f, args, kwargs):
+        allargs = set(args) | set(kwargs.values())
+        for a in allargs:
+            if a in tainted:
+                return reached(a)
+        else:
+            return f(*args, **kwargs)
+            
     def _ssinc(f):
         def inner(*args, **kwargs):
-            allargs = set(args) | set(kwargs.values())
             if v is None:   # sensitive to ALL
                 tainted = reduce(lambda a, b: a | b, 
                                  [x for x in TAINTED.values()], set())
-                for a in allargs:
-                    if a in tainted:
-                        return reached(a)
-                else:
-                    return f(*args, **kwargs)
+                return _solve(tainted, f, args, kwargs)
             else:
-                for a in allargs:
-                    if a in TAINTED[v]:
-                        return reached(a, v=v)
-                else:
-                    return f(*args, **kwargs)
+                return _solve(TAINTED[v], f, args, kwargs)
         return inner            
     return _ssinc
     

@@ -1,7 +1,9 @@
 from dyntaint import *
 import unittest
 
-def reached(f, v=None):
+ends_execution()
+
+def reached(f):
     return False  
 
 @untrusted
