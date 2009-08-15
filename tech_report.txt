@@ -132,14 +132,74 @@ vulnerabilidad, aunque este no es un caso de uso muy usado:
     @ssink():
     def muy_sensible(input):
         ...
-    
+
+Cuando un valor manchado alcanza un sumidero sensible, estamos ante la
+existencia de una vulnerabilidad y un mecanismo apropiado es ejecutado (ver
+la sección reached).
+
+No solo funciones o métodos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ssink permite no solo marcar funciones o métodos como sumideros sensibles,
+sino cualquier llamable (callable); es decir cualquier objeto que implemente
+el método __call__. Por ejemplo, dentro de un programa escrito utilizando
+el framework web.py podemos hacer:
+
+.. code-block:: python
+
+    import web
+    web.redirect = ssink()(web.redirect)
+
+Esto es muy similar a los ejemplos anteriores, pero hay que resaltar que
+redirect no es una función o méotodo, sino que es una clase (Redirect). La
+semántica es la misma, si la clase se instancia (llama) con un valor manchado,
+un mecanismo apropiado es ejecutado (ver la sección reached).
+
+El siguiente ejemplo ejemplifica la forma en que se puede marcar una clase:
+
+.. code-block:: python
+
+    from dyntaint import *
+
+    class Do(object):
+        
+        def __init__(self, a, b):
+            self.a = a
+            self.b = b
+            
+    d1 = Do('no manchado')
+    m = tainted('manchado')
+    d2 = Do(m)
+    Do = ssink()(Do)
+    d3 = Do('no manchado')
+    d4 = Do(m)
+
+El resultado de correr el anterior programa es::
+
+
+    juanjo@fenix:~/python/dyntaint/experimentos/ssink_class$ python ejemplo.py 
+    ===============================================================================
+    Violacion en la linea 14 del archivo ejemplo.py
+    Valor manchado: manchado
+    -------------------------------------------------------------------------------
+        d2 = Do(m, 2)
+        Do = ssink()(Do)
+        d3 = Do('no manchado', 1)
+    --> d4 = Do(m, 2)
+        
+
+    ===============================================================================
+
 reached
 -------
 
 El decorador ssink tiene un argumento opcional llamado reached. Cuando el
 sumidero es llamado con un argumento manchado con la vulnerabilidad a la que
-este es sensible, el sumidero no es ejecutado y en su lugar se ejecuta la
-función reached.
+este es sensible, se activa un mecanismo apropiado.
+
+Si la variable de módulo ENDS es True, entonces el sumidero no es ejecutado y
+en su lugar se ejecuta la función reached. Si ENDS es False, la función reached
+es ejecutada, pero se continúa con la ejecución del programa.
 
 Se provee una implementación por defecto que alerta de la violación ocurrida
 y da información para encontrar el error.
