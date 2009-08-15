@@ -28,7 +28,7 @@ def reached(t, v=None):
     print "Violacion en la linea %d del archivo %s" % (lno, filename)
     print "Valor manchado: %s" % t
     print '-' * 79
-    lineas = inspect.findsource(frame)[0]
+    lineas = inspect.findsource(frame)[0]   # cambiar a getsourceline cuando el parche de gg este incorporado
     lineas = ['    %s' % l for l in lineas]
     lno = lno - 1
     lineas[lno] = '--> ' + lineas[lno][4:]
