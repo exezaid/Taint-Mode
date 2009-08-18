@@ -109,10 +109,11 @@ injection:
 
 .. code-block:: python
 
+    import web
     db = web.database(dbn="sqlite", db=DB_NAME)
-    db.delete = ssink(v=SQLI)(db.delete)
-    db.select = ssink(v=SQLI)(db.select)
-    db.insert = ssink(v=SQLI)(db.insert)
+    db.delete = ssink(SQLI)(db.delete)
+    db.select = ssink(SQLI)(db.select)
+    db.insert = ssink(SQLI)(db.insert)
 
 Cómo con los otros decoradores, si el sumidero sensible es definido en nuestro
 código, podemos utilizar azúcar sintánctica:
