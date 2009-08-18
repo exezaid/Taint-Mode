@@ -588,8 +588,8 @@ class TaintFunction(unittest.TestCase):
     def test_taint_values(self):
         a = "will be xss tainted"
         b = "will be sqli tainted"
-        taint(a, XSS)
-        taint(b, SQLI)
+        a = taint(a, XSS)
+        b = taint(b, SQLI)
         self.assertTrue(tainted(a, v=XSS))
         self.assertTrue(tainted(a, v=XSS))
 

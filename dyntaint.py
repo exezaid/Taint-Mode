@@ -140,10 +140,12 @@ def ssink(v=None, reached=reached):
     
 def tainted(o, v=None):
     '''
-    Tells if a value o is tainted for the given vul.
+    Tells if a value o, STR instance, is tainted for the given vul.
     
     If vul is None, the value is searched in avery TAINTED set.
     '''
+    if not isinstance(o, STR):
+        return False
     if v:
         vset = TAINTED.get(v)
         if vset:
