@@ -89,13 +89,37 @@ def untrusted(f):
         r = f(*args, **kwargs)
         return t_(r)
     return inner
-        
+
+def validator(v, nargs=[], nkwargs=[]):
+    '''
+    Mark a function or methos as capable to validate its input.
+    
+    nargs is a list of positions. Positional arguments in that positions are
+    the ones validated.
+	nkwargs is a list of strings. Keyword arguments for those keys are the ones
+	validated.
+    If the function returns True, the validated inpunts will be removed from
+    the TAINTED[v] set.
+    '''
+    def _validator(f):
+        def inner(*args, **kwargs):
+            global TAINTED
+            r = f(*args, **kwargs)
+            if r:
+                tovalid = set([args[n] for n in nargs]) | set([kwargs[n] for n in nkwargs])
+                s = TAINTED[v]
+                for a in tovalid:
+                    if a in s:
+                        s.remove(a)
+            return r
+        return inner
+    return _validator
+    
 def cleaner(v):
     '''
     Mark a function or methos as capable to clean its input.
     
-    If v is provied, the returned value is removed from the TAINTED[v] set.
-    If not, it's removed from all the sets int TAINTED.
+    The returned value is removed from the TAINTED[v] set.
     '''
     def _cleaner(f):    
         def inner(*args, **kwargs):
@@ -160,7 +184,10 @@ def tainted(o, v=None):
 def taint(var, v=None):
     '''
     Helper function for taint variables.
+    Empty string can't be tainted.
     '''
+    if var == '':
+        return var
     var = STR(var)
     if v:
         vset = TAINTED.get(v)
