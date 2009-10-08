@@ -48,11 +48,7 @@ siguiente ejemplo es de un programa que utiliza el framework web.py:
     import web
     web.input = untrusted(web.input)
 
-Si el valor retornado es un basestring, es convertido al tipo STR y almacenado
-en todos los conjuntos de TAINTED antes de ser retornado. Si el valor es un
-diccionario, lo anterior se realiza con todos sus valores que sean basestring y
-el nuevo objeto STR es también almacenado en el lugar correspondiente en el
-diccionario.
+Ver Valores no confiables.
 
 cleaner
 -------
@@ -73,7 +69,7 @@ un nuevo valor limpio:
 
 Este tipo de funciones están asociadas a un tipo de vulnerabilidad; por lo
 tanto la forma de utilizar el decorador cleaner es especificando un tipo de
-mancha. Nuevamente hay dos formas de hacerlo, en la definición:
+mancha. Nuevamente hay dos formas de hacerlo. En la definición:
 
 .. code-block:: python
 
@@ -94,7 +90,7 @@ El decorador ssink debe utilizarse para marcar aquellas funciones o métodos que
 no queremos sean alcanzadas por valores manchados. Los llamamos sumideros
 sensibles o sensitive sinks.
 
-Estos sumideros son sensibles a un tipo de vulnerabilidad, es por eso que debe
+Estos sumideros son sensibles a un tipo de vulnerabilidad, y debe
 especificarse cuando se utiliza el decorador.
 
 Por ejemplo, la función eval de Python es un sumidero sensible a ataques de
@@ -156,7 +152,7 @@ redirect no es una función o méotodo, sino que es una clase (Redirect). La
 semántica es la misma, si la clase se instancia (llama) con un valor manchado,
 un mecanismo apropiado es ejecutado (ver la sección reached).
 
-El siguiente ejemplo ejemplifica la forma en que se puede marcar una clase:
+El siguiente ejemplo muestra la forma en que se puede marcar una clase:
 
 .. code-block:: python
 
@@ -223,7 +219,7 @@ cuando se extiende la clase LineOnlyReceiver:
             self.doSomething(line)  # line es un valor manchado
 
 En estos casos, utilizar el decorador untrusted es engorroso o incluso
-imposible. Es recomendable utilizar el decorador untrusted_args, que recibe
+imposible. En su lugar se debe utilizar el decorador untrusted_args, que recibe
 como argumento (opcionalmente) una lista de posiciones de argumentos no
 confiables y una lista de argumentos de palabra clave. El parámetro line del
 ejempo anterior puede marcarse como no confiable así:

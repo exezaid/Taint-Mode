@@ -151,7 +151,7 @@ def ssink(v=None, reached=reached):
         else:
             return f(*args, **kwargs)
             
-    def _ssinc(f):
+    def _ssink(f):
         def inner(*args, **kwargs):
             if v is None:   # sensitive to ALL
                 tainted = reduce(lambda a, b: a | b, 
@@ -159,8 +159,8 @@ def ssink(v=None, reached=reached):
                 return _solve(tainted, f, args, kwargs)
             else:
                 return _solve(TAINTED[v], f, args, kwargs)
-        return inner            
-    return _ssinc
+        return inner
+    return _ssink
     
 def tainted(o, v=None):
     '''
