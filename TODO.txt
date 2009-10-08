@@ -1,0 +1,6 @@
+mancha1 + mancha2 --> el resultado debe tener las dos manchas
+Creo que ya esta...
+==================================================
+Qué hacemos con Unicode?
+==================================================
+tests para @validator
