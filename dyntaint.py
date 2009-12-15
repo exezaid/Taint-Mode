@@ -435,3 +435,28 @@ class STR(str):
             if self in s:
                 s.add(r)
         return r
+        
+
+# workaround temporario para el problema planteado por Alejandro Russo de que
+# chr(ord(t[n])) puede borrar la mancha de todos los caracteres para luego
+# concatenarlos y borrar la mancha.
+# Una mejor solucion implica el refactoring de eliminar la variable global 
+# TAINTED e implementar un atributo tainted en la clase STR.
+import __builtin__
+TCHARS = []
+def ord(s):
+    if tainted(s):
+        i = __builtin__.ord(s)
+        TCHARS.append(i)
+        return i
+    else:
+        return __builtin__.ord(s)
+        
+def chr(i):
+    if i in TCHARS:
+        c = __builtin__.chr(i)
+        s = STR(c)
+        taint(s)
+        return s
+    else:
+        return __builtin__.chr(i)
