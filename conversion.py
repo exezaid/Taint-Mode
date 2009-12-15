@@ -9,8 +9,7 @@ def execute(cmd):
 
 def conv(s):
   r = ''
-  for a in range(0, len(s)):    
-     print tainted(s[a])    # True
+  for a in range(0, len(s)):
      r+= chr(ord(s[a]))
   return r
 
