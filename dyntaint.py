@@ -194,9 +194,10 @@ class STR(str):
     trac taints over operations.
     '''
     
-    def __init__(self, s):
+    def __new__(cls, s):
+        self = super(STR, cls).__new__(cls, s)
         self.taints = set()
-        super(STR, self).__init__(s)
+        return self
     
     def __str__(self):
         return super(STR, self).__str__()   # REVISAR si esto no proboca
