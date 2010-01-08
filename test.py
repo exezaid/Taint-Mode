@@ -503,25 +503,25 @@ class TestSTR(unittest.TestCase):
         self.assertTrue(saveDB2(cleanSQLI(i.zfill(3))))
 
                   
-class TestTAINTED(unittest.TestCase):   
+class TestTaints(unittest.TestCase):   
 
     def test_all_set(self):
         n = some_input('test all set')
-        self.assertTrue(n in TAINTED[SQLI])
-        self.assertTrue(n in TAINTED[XSS])
+        self.assertTrue(SQLI in n.taints)
+        self.assertTrue(XSS in n.taints)
 
     def test_in_one_set(self):
         n = some_input('test in one set')
         n = cleanSQLI(n)
-        self.assertFalse(n in TAINTED[SQLI])
-        self.assertTrue(n in TAINTED[XSS])
+        self.assertFalse(SQLI in n.taints)
+        self.assertTrue(XSS in n.taints)
         
     def test_in_no_set(self):
         n = some_input('test in no set')
         n = cleanSQLI(n)
         n = cleanXSS(n)
-        self.assertFalse(n in TAINTED[SQLI])
-        self.assertFalse(n in TAINTED[XSS])    
+        self.assertFalse(SQLI in n.taints)
+        self.assertFalse(XSS in n.taints)    
 
 
 class TestTainted(unittest.TestCase):
