@@ -187,7 +187,22 @@ def taint(var, v=None):
         var.taints.update(KEYS)
         return var
             
-            
+
+def wrap(self, cls, method):
+    def _w(*args, **kwargs):
+        sup = getattr(super(cls, self),method)
+        r = cls(sup(*args, **kwargs))
+        r.taints.update(self.taints)
+        for a in args:
+            if hasattr(a, 'taints'):
+                r.taints.update(a.taints)
+        for k,v in kwargs.items():
+            if hasattr(v, 'taints'):
+                r.taints.update(v.taints)                
+        print r
+        return r
+    return _w
+    
 class STR(str):
     '''
     Extends str class to provide extra capabilities that make it sutable to
@@ -204,12 +219,14 @@ class STR(str):
                                             # un error al perder la clase del o
 
     def __add__(self, other):
-        r = super(STR, self).__add__(other)
-        r = STR(r)
-        r.taints.update(self.taints)
-        if hasattr(other, 'taints'):
-            r.taints.update(other.taints)        
-        return r
+        #r = super(STR, self).__add__(other)
+        #r = STR(r)
+        #r.taints.update(self.taints)
+        #if hasattr(other, 'taints'):
+        #    r.taints.update(other.taints)        
+        #return r
+        f = wrap(self, STR, '__add__')
+        return f(other)
 
     def __radd__(self, other):
         return STR.__add__(STR(other), self)
