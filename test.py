@@ -571,6 +571,7 @@ class TestSink(unittest.TestCase):
         n = cleanXSS(n)
         n = cleanOSI(n)
         n = cleanII(n)
+        print "VERRRRRRRR", n.taints
         self.assertTrue(saveDB1(n))
         self.assertTrue(saveDB2(n))
         self.assertTrue(saveDB3(n))

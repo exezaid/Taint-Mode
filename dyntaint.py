@@ -42,20 +42,25 @@ def t_string(s):
 def t_list(l):
 	return [t_(x) for x in l]
 
+def t_tuple(l):
+	return tuple([t_(x) for x in l])
+	
 def t_dict(d):
     klass = type(d) # es comun que los frameworks extiendan dict con 
                     # nuevos metodos, como en web.py
     return klass([(k, t_(v)) for k,v in d.items()])
 	
 def t_(o):
-	if isinstance(o, basestring):
-		return t_string(o)
-	elif isinstance(o, list):
-		return t_list(o)
-	elif isinstance(o, dict):
-		return t_dict(o)
-	else:
-		return o
+    if isinstance(o, basestring):
+        return t_string(o)
+    elif isinstance(o, list):
+        return t_list(o)
+    elif isinstance(o, tuple):
+        return t_tuple(o)
+    elif isinstance(o, dict):
+        return t_dict(o)
+    else:
+        return o
 			
 def untrusted_args(nargs=[], nkwargs=[]):
     '''
@@ -187,23 +192,62 @@ def taint(var, v=None):
         var.taints.update(KEYS)
         return var
             
-
+def update_taints(o, taints):
+    if isinstance(o, STR):
+        o.taints.update(taints)
+    elif isinstance(o, list):
+        [update_taints(x, taints) for x in o]        
+    elif isinstance(o, tuple):
+        [update_taints(x, taints) for x in o]
+    elif isinstance(o, dict):
+        for k, v in o.iteritems():
+            update_taints(v, taints)
+                            
 def wrap(self, cls, method):
     def _w(*args, **kwargs):
         sup = getattr(super(cls, self), method)
-        r = cls(sup(*args, **kwargs))
-        r.taints.update(self.taints)
+        #r = cls(sup(*args, **kwargs))
+        r = i_(sup(*args, **kwargs))
+        #r.taints.update(self.taints)
+        update_taints(r, self.taints)
         for a in args:
             if hasattr(a, 'taints'):
-                r.taints.update(a.taints)
+                update_taints(r, a.taints)
+                #r.taints.update(a.taints)
         for k,v in kwargs.items():
             if hasattr(v, 'taints'):
-                r.taints.update(v.taints)                
+                update_taints(r, v.taints)
+                #r.taints.update(v.taints)                
         print r
         return r
     return _w
     
-    
+def i_string(s):
+	return STR(s)
+	
+def i_list(l):
+	return [i_(x) for x in l]
+
+def i_tuple(l):
+	return tuple([i_(x) for x in l])
+	
+def i_dict(d):
+    klass = type(d) # es comun que los frameworks extiendan dict con 
+                    # nuevos metodos, como en web.py
+    return klass([(k, i_(v)) for k,v in d.items()])
+	
+def i_(o):
+    if isinstance(o, basestring):
+        return i_string(o)
+    elif isinstance(o, list):
+        return i_list(o)
+    elif isinstance(o, tuple):
+        return i_tuple(o)
+    elif isinstance(o, dict):
+        return i_dict(o)
+    else:
+        return o
+            
 class STR(str):
     '''
     Extends str class to provide extra capabilities that make it sutable to
@@ -267,14 +311,15 @@ class STR(str):
         return wrap(self, STR, 'lstrip')(chars)
             
     def partition(self, sep):       # WARN: no se puede aplicar wrap por que r no es str
-        head, sep, tail = super(STR, self).partition(sep)
-        head, sep, tail = STR(head), STR(sep), STR(tail)
-        head.taints.update(self.taints)
-        sep.taints.update(self.taints)
-        tail.taints.update(self.taints)
+        #head, sep, tail = super(STR, self).partition(sep)
+        #head, sep, tail = STR(head), STR(sep), STR(tail)
+        #head.taints.update(self.taints)
+        #sep.taints.update(self.taints)
+        #tail.taints.update(self.taints)
         # should the original sep be tested too?
-        return head, sep, tail
-
+        #return head, sep, tail
+        return wrap(self, STR, 'partition')(sep)
+        
     def replace(self, old, new, count=-1):
         return wrap(self, STR, 'replace')(old, new, count)
 
@@ -282,34 +327,23 @@ class STR(str):
         return wrap(self, STR, 'rjust')(width, fillchar)    # revistar test ljust
                 
     def rpartition(self, sep):
-        head, sep, tail = super(STR, self).rpartition(sep)
-        head, sep, tail = STR(head), STR(sep), STR(tail)
-        head.taints.update(self.taints)
-        sep.taints.update(self.taints)
-        tail.taints.update(self.taints)
-        #verificar si hay casos en que sep este manchado y como tratarlo
-        return head, sep, tail
+        return wrap(self, STR, 'rpartition')(sep)
         
     def rsplit(self, sep=' ', maxsplit=-1):
-        aList = super(STR, self).rsplit(sep, maxsplit)
-        aList = [STR(l) for l in aList]
-        [r.taints.update(self.taints) for r in aList]
-        return aList
-        
+        #aList = super(STR, self).rsplit(sep, maxsplit)
+        #aList = [STR(l) for l in aList]
+        #[r.taints.update(self.taints) for r in aList]
+        #return aList
+        return wrap(self, STR, 'rsplit')(sep, maxsplit)
+                
     def rstrip(self, chars=' '):
         return wrap(self, STR, 'rstrip')(chars)       
 
     def split(self, sep=' ', maxsplit=-1):
-        aList = super(STR, self).split(sep, maxsplit)
-        aList = [STR(l) for l in aList]
-        [r.taints.update(self.taints) for r in aList]
-        return aList
+        return wrap(self, STR, 'split')(sep, maxsplit)
 
     def splitlines(self, keepends=False):
-        aList = super(STR, self).splitlines(keepends)
-        aList = [STR(l) for l in aList]
-        [r.taints.update(self.taints) for r in aList]
-        return aList
+        return wrap(self, STR, 'splitlines')(keepends)
 
     def strip(self, chars=' '):
         return wrap(self, STR, 'strip')(chars)
