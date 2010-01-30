@@ -190,7 +190,7 @@ def taint(var, v=None):
 
 def wrap(self, cls, method):
     def _w(*args, **kwargs):
-        sup = getattr(super(cls, self),method)
+        sup = getattr(super(cls, self), method)
         r = cls(sup(*args, **kwargs))
         r.taints.update(self.taints)
         for a in args:
@@ -202,6 +202,7 @@ def wrap(self, cls, method):
         print r
         return r
     return _w
+    
     
 class STR(str):
     '''
@@ -219,97 +220,53 @@ class STR(str):
                                             # un error al perder la clase del o
 
     def __add__(self, other):
-        #r = super(STR, self).__add__(other)
-        #r = STR(r)
-        #r.taints.update(self.taints)
-        #if hasattr(other, 'taints'):
-        #    r.taints.update(other.taints)        
-        #return r
-        f = wrap(self, STR, '__add__')
-        return f(other)
+        return wrap(self, STR, '__add__')(other)
 
     def __radd__(self, other):
         return STR.__add__(STR(other), self)
      
     def __getslice__(self, i, j):
-        r = super(STR, self).__getslice__(i, j)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, '__getslice__')(i, j)
 
     def __getitem__(self, y):
-        r = super(STR, self).__getitem__(y)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
-        
+        return wrap(self, STR, '__getitem__')(y)
+                
     def __mod__(self, y):
-        r = super(STR, self).__mod__(y)
-        r = STR(r)
-        r.taints.update(self.taints)
-        if hasattr(y, 'taints'):        # at __rmod__ y is an SRT instance
-            r.taints.update(y.taints)
-        return r    
+        return wrap(self, STR, '__mod__')(y)   
         
     def __mul__(self, y):
-        r = super(STR, self).__mul__(y)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r            
+        return wrap(self, STR, '__mul__')(y)           
 
     def __rmod__(self, other):
-        return STR.__mod__(STR(other), self)
+        return wrap(self, STR, '__rmod__')(other)   
         
     def __rmul__(self, other):
-        r = STR.__mul__(self, other)
-        return r
+        return wrap(self, STR, '__rmul__')(other)
 
     def capitalize(self):
-        r = super(STR, self).capitalize()
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'capitalize')()   
         
     def center(self, width, fillchar=' '):
-        r = super(STR, self).center(width, fillchar)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'center')(width, fillchar)   
         
     # decode, encode ?
     
     def expandtabs(self, tabsize=8):
-        r = super(STR, self).expandtabs(tabsize)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r    
-
-    def join(self, y):
-        r = super(STR, self).join(y)
-        r = STR(r)
-        r.taints.update(self.taints)
-        # ojo, chequear y
-        return r
+        return wrap(self, STR, 'expandtabs')(tabsize)   
         
+    def join(self, y):
+        return wrap(self, STR, 'join')(y)
+                
     def ljust(self, width, fillchar=' '):
-        r = super(STR, self).ljust(width, fillchar)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'ljust')(width, fillchar)
         
     def lower(self):
-        r = super(STR, self).lower()
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'lower')()
         
     def lstrip(self, chars=' '):
-        r = super(STR, self).lstrip(chars)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'lstrip')(chars)
             
-    def partition(self, sep):
+    def partition(self, sep):       # WARN: no se puede aplicar wrap por que r no es str
         head, sep, tail = super(STR, self).partition(sep)
         head, sep, tail = STR(head), STR(sep), STR(tail)
         head.taints.update(self.taints)
@@ -319,18 +276,11 @@ class STR(str):
         return head, sep, tail
 
     def replace(self, old, new, count=-1):
-        r = super(STR, self).replace(old, new, count)
-        r = STR(r)
-        r.taints.update(self.taints)
-        # verificar new
-        return r
+        return wrap(self, STR, 'replace')(old, new, count)
 
     def rjust(self, width, fillchar=' '):
-        r = super(STR, self).rjust(width, fillchar)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
-        
+        return wrap(self, STR, 'rjust')(width, fillchar)    # revistar test ljust
+                
     def rpartition(self, sep):
         head, sep, tail = super(STR, self).rpartition(sep)
         head, sep, tail = STR(head), STR(sep), STR(tail)
@@ -347,11 +297,7 @@ class STR(str):
         return aList
         
     def rstrip(self, chars=' '):
-        r = super(STR, self).rstrip(chars)
-        r = STR(r)
-        r.taints.update(self.taints)
-        #r.taints.update(other.taints)
-        return r        
+        return wrap(self, STR, 'rstrip')(chars)       
 
     def split(self, sep=' ', maxsplit=-1):
         aList = super(STR, self).split(sep, maxsplit)
@@ -366,37 +312,19 @@ class STR(str):
         return aList
 
     def strip(self, chars=' '):
-        r = super(STR, self).strip(chars)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'strip')(chars)
 
     def swapcase(self):
-        r = super(STR, self).swapcase()
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'swapcase')()
 
     def title(self):
-        r = super(STR, self).title()
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
-        
+        return wrap(self, STR, 'title')()
+                
     def translate(self, table, deletechars=''):
-        r = super(STR, self).translate(table, deletechars)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r      
+        return wrap(self, STR, 'translate')(table, deletechars)     
         
     def upper(self):
-        r = super(STR, self).upper()
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'upper')()
 
     def zfill(self, width):
-        r = super(STR, self).zfill(width)
-        r = STR(r)
-        r.taints.update(self.taints)
-        return r
+        return wrap(self, STR, 'zfill')(width)
