@@ -202,26 +202,20 @@ def update_taints(o, taints):
     elif isinstance(o, dict):
         for k, v in o.iteritems():
             update_taints(v, taints)
-                            
-def wrap(self, cls, method):
-    def _w(*args, **kwargs):
-        sup = getattr(super(cls, self), method)
-        #r = cls(sup(*args, **kwargs))
-        r = i_(sup(*args, **kwargs))
-        #r.taints.update(self.taints)
+
+def wrap2(cls, method):
+    def _w(self, *args, **kwargs):
+        r = i_(method(self, *args, **kwargs))
         update_taints(r, self.taints)
         for a in args:
             if hasattr(a, 'taints'):
                 update_taints(r, a.taints)
-                #r.taints.update(a.taints)
         for k,v in kwargs.items():
             if hasattr(v, 'taints'):
-                update_taints(r, v.taints)
-                #r.taints.update(v.taints)                
-        print r
+                update_taints(r, a.taints)
         return r
     return _w
-    
+        
 def i_string(s):
 	return STR(s)
 	
@@ -247,118 +241,24 @@ def i_(o):
         return i_dict(o)
     else:
         return o
-            
-class STR(str):
-    '''
-    Extends str class to provide extra capabilities that make it sutable to
-    trac taints over operations.
-    '''
+
+import inspect
     
-    def __new__(cls, s):
-        self = super(STR, cls).__new__(cls, s)
-        self.taints = set()
-        return self
+methods = ['__add__', '__getitem__', '__getslice__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
+
+def taint_class(klass):
+    class tklass(klass):
+        def __new__(cls, *args, **kwargs):
+            self = super(tklass, cls).__new__(cls, *args, **kwargs)
+            self.taints = set()
+            return self
+    d = klass.__dict__
+    for name, attr in [(m, d[m]) for m in methods]:
+        if inspect.ismethod(attr) or inspect.ismethoddescriptor(attr):
+            setattr(tklass, name, wrap2(tklass, attr))
+    setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
     
-    def __str__(self):
-        return super(STR, self).__str__()   # REVISAR si esto no proboca
-                                            # un error al perder la clase del o
+    return tklass      
 
-    def __add__(self, other):
-        return wrap(self, STR, '__add__')(other)
 
-    def __radd__(self, other):
-        return STR.__add__(STR(other), self)
-     
-    def __getslice__(self, i, j):
-        return wrap(self, STR, '__getslice__')(i, j)
-
-    def __getitem__(self, y):
-        return wrap(self, STR, '__getitem__')(y)
-                
-    def __mod__(self, y):
-        return wrap(self, STR, '__mod__')(y)   
-        
-    def __mul__(self, y):
-        return wrap(self, STR, '__mul__')(y)           
-
-    def __rmod__(self, other):
-        return wrap(self, STR, '__rmod__')(other)   
-        
-    def __rmul__(self, other):
-        return wrap(self, STR, '__rmul__')(other)
-
-    def capitalize(self):
-        return wrap(self, STR, 'capitalize')()   
-        
-    def center(self, width, fillchar=' '):
-        return wrap(self, STR, 'center')(width, fillchar)   
-        
-    # decode, encode ?
-    
-    def expandtabs(self, tabsize=8):
-        return wrap(self, STR, 'expandtabs')(tabsize)   
-        
-    def join(self, y):
-        return wrap(self, STR, 'join')(y)
-                
-    def ljust(self, width, fillchar=' '):
-        return wrap(self, STR, 'ljust')(width, fillchar)
-        
-    def lower(self):
-        return wrap(self, STR, 'lower')()
-        
-    def lstrip(self, chars=' '):
-        return wrap(self, STR, 'lstrip')(chars)
-            
-    def partition(self, sep):       # WARN: no se puede aplicar wrap por que r no es str
-        #head, sep, tail = super(STR, self).partition(sep)
-        #head, sep, tail = STR(head), STR(sep), STR(tail)
-        #head.taints.update(self.taints)
-        #sep.taints.update(self.taints)
-        #tail.taints.update(self.taints)
-        # should the original sep be tested too?
-        #return head, sep, tail
-        return wrap(self, STR, 'partition')(sep)
-        
-    def replace(self, old, new, count=-1):
-        return wrap(self, STR, 'replace')(old, new, count)
-
-    def rjust(self, width, fillchar=' '):
-        return wrap(self, STR, 'rjust')(width, fillchar)    # revistar test ljust
-                
-    def rpartition(self, sep):
-        return wrap(self, STR, 'rpartition')(sep)
-        
-    def rsplit(self, sep=' ', maxsplit=-1):
-        #aList = super(STR, self).rsplit(sep, maxsplit)
-        #aList = [STR(l) for l in aList]
-        #[r.taints.update(self.taints) for r in aList]
-        #return aList
-        return wrap(self, STR, 'rsplit')(sep, maxsplit)
-                
-    def rstrip(self, chars=' '):
-        return wrap(self, STR, 'rstrip')(chars)       
-
-    def split(self, sep=' ', maxsplit=-1):
-        return wrap(self, STR, 'split')(sep, maxsplit)
-
-    def splitlines(self, keepends=False):
-        return wrap(self, STR, 'splitlines')(keepends)
-
-    def strip(self, chars=' '):
-        return wrap(self, STR, 'strip')(chars)
-
-    def swapcase(self):
-        return wrap(self, STR, 'swapcase')()
-
-    def title(self):
-        return wrap(self, STR, 'title')()
-                
-    def translate(self, table, deletechars=''):
-        return wrap(self, STR, 'translate')(table, deletechars)     
-        
-    def upper(self):
-        return wrap(self, STR, 'upper')()
-
-    def zfill(self, width):
-        return wrap(self, STR, 'zfill')(width)
+STR = taint_class(str)        
