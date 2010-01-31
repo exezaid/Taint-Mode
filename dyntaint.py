@@ -12,6 +12,17 @@ import pdb
 import inspect
 import sys
 
+######################################
+# This alternative implementation of
+# len let INT to be returned by len
+original_len = len
+def len(o):
+    l = o.__len__()
+    if isinstance(l, int):
+        return l
+    original_len(o)
+######################################
+
 def ends_execution(b=True):
     global ENDS
     ENDS = b
@@ -36,8 +47,8 @@ def reached(t, v=None):
     print "".join(lineas) 
     print "=" * 79
     
-def t_string(s):
-	return taint(s)
+#def t_string(s):
+#	return taint(s)
 	
 def t_list(l):
 	return [t_(x) for x in l]
@@ -54,8 +65,10 @@ def t_dict(d):
     return klass([(k, t_(v)) for k,v in d.items()])
 	
 def t_(o):
-    if isinstance(o, basestring):
-        return t_string(o)
+    #if isinstance(o, basestring):
+    #    return t_string(o)
+    if type(o) in tclasses.keys():
+        return taint(o)
     elif isinstance(o, list):
         return t_list(o)
     elif isinstance(o, tuple):
@@ -170,11 +183,11 @@ def ssink(v=None, reached=reached):
     
 def tainted(o, v=None):
     '''
-    Tells if a value o, STR instance, is tainted for the given vul.
+    Tells if a value o, ant tclass instance, is tainted for the given vul.
     
     If v is None, test if o.taints is not empty.
     '''
-    if not isinstance(o, STR):
+    if not hasattr(o, 'taints'):
         return False
     if v:
         return v in o.taints
@@ -187,9 +200,9 @@ def taint(var, v=None):
     Helper function for taint variables.
     Empty string can't be tainted.
     '''
-    if var == '':
+    if var == '':   #REVEER
         return var
-    var = STR(var)
+    var = tclass(var)
     if v:
         var.taints.add(v)
         return var
@@ -198,7 +211,9 @@ def taint(var, v=None):
         return var
             
 def update_taints(o, taints):
-    if isinstance(o, STR):
+    #if isinstance(o, STR):
+    #    o.taints.update(taints)
+    if hasattr(o, 'taints'):
         o.taints.update(taints)
     elif isinstance(o, list):
         [update_taints(x, taints) for x in o]        
@@ -209,7 +224,7 @@ def update_taints(o, taints):
     elif isinstance(o, dict):
         [update_taints(v, taints) for v in o.values()]
 
-def wrap2(cls, method):
+def wrap2(method):
     def _w(self, *args, **kwargs):
         r = i_(method(self, *args, **kwargs))
         update_taints(r, self.taints)
@@ -218,12 +233,12 @@ def wrap2(cls, method):
                 update_taints(r, a.taints)
         for k,v in kwargs.items():
             if hasattr(v, 'taints'):
-                update_taints(r, a.taints)
+                update_taints(r, a.taints)                
         return r
     return _w
         
-def i_string(s):
-	return STR(s)
+#def i_string(s):
+#	return STR(s)
 	
 def i_list(l):
 	return [i_(x) for x in l]
@@ -237,8 +252,10 @@ def i_dict(d):
     return klass([(k, i_(v)) for k,v in d.items()])
 	
 def i_(o):
-    if isinstance(o, basestring):
-        return i_string(o)
+    #if isinstance(o, basestring):
+    #    return i_string(o)
+    if type(o) in tclasses.keys():
+        return tclass(o)
     elif isinstance(o, list):
         return i_list(o)
     elif isinstance(o, tuple):
@@ -249,10 +266,8 @@ def i_(o):
         return o
 
 import inspect
-    
-methods = ['__add__', '__getitem__', '__getslice__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
 
-def taint_class(klass):
+def taint_class(klass, methods):
     class tklass(klass):
         def __new__(cls, *args, **kwargs):
             self = super(tklass, cls).__new__(cls, *args, **kwargs)
@@ -261,10 +276,31 @@ def taint_class(klass):
     d = klass.__dict__
     for name, attr in [(m, d[m]) for m in methods]:
         if inspect.ismethod(attr) or inspect.ismethoddescriptor(attr):
-            setattr(tklass, name, wrap2(tklass, attr))
+            setattr(tklass, name, wrap2(attr))
     setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
     
     return tklass      
 
+str_methods = ['__add__', '__getitem__', '__getslice__', '__len__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
 
-STR = taint_class(str)        
+# ojo, hay algunos atribujos que no se pueden setear, los voy borrando de aqui
+# en el futuro usar dir() y manejar la excepcion
+# elimino: __repr__ __cmp__ __getattribute__ __new__
+int_methods = ['__abs__', '__add__', '__and__', '__coerce__', '__div__', '__divmod__', '__doc__', '__float__',
+'__floordiv__', '__format__', '__getnewargs__', '__hash__', '__hex__', '__index__', '__int__',
+'__invert__', '__long__', '__lshift__', '__mod__', '__mul__', '__neg__', '__nonzero__', '__oct__', '__or__',
+'__pos__', '__pow__', '__radd__', '__rand__', '__rdiv__', '__rdivmod__', '__rfloordiv__', '__rlshift__', '__rmod__',
+'__rmul__', '__ror__', '__rpow__', '__rrshift__', '__rshift__', '__rsub__', '__rtruediv__', '__rxor__', '__str__', '__sub__', '__truediv__', '__trunc__', '__xor__', 'conjugate', 'denominator', 'imag', 'numerator', 'real']
+
+STR = taint_class(str, str_methods)
+INT = taint_class(int, int_methods)
+
+tclasses = {str: STR, int: INT}
+
+def tclass(o):
+    '''Tainted instance factory.'''
+    klass = type(o)
+    if klass in tclasses.keys():
+        return tclasses[klass](o)
+    else:
+        raise KeyError        

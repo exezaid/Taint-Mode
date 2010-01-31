@@ -488,8 +488,8 @@ class TestSTR(unittest.TestCase):
         '''if s is tainted. s.upper() is also tainted.'''
         
         i = some_input("clean not upper")
-        self.assertTrue(saveDB2(cleanSQLI(i.upper())))                                                                                         
-
+        self.assertTrue(saveDB2(cleanSQLI(i.upper())))
+        
     def test_zfill_not_cleaned(self):
         '''if s is tainted. s.zfill(width) is also tainted.'''
         
@@ -502,7 +502,38 @@ class TestSTR(unittest.TestCase):
         i = some_input("8")
         self.assertTrue(saveDB2(cleanSQLI(i.zfill(3))))
 
-                  
+    # Previous tests are for methods returning str or containers
+    
+    def test_len(self):
+        '''if s is tainted. len(s) is also tainted.'''
+        
+        i = some_input("cinco")
+        self.assertFalse(saveDB2(len(i)))
+
+class TestINT(unittest.TestCase):
+
+    def test_abs(self):
+        i = some_input(1)
+        self.assertTrue(tainted(abs(i)))
+
+    def test_add(self):
+        i = some_input(1)
+        self.assertTrue(tainted(i + 2))
+
+    def test_and(self):
+        i = some_input(1)
+        #self.assertTrue(tainted(i and 2)) retorna bool
+
+    def test_div(self):
+        i = some_input(1)
+        self.assertTrue(tainted(i / 2))
+
+    def test_divmod(self):
+        i = some_input(1)
+        a,b = divmod(i, 2)
+        self.assertTrue(tainted(a))
+        self.assertTrue(tainted(b))        
+                                                                
 class TestTaints(unittest.TestCase):   
 
     def test_all_set(self):
@@ -571,7 +602,6 @@ class TestSink(unittest.TestCase):
         n = cleanXSS(n)
         n = cleanOSI(n)
         n = cleanII(n)
-        print "VERRRRRRRR", n.taints
         self.assertTrue(saveDB1(n))
         self.assertTrue(saveDB2(n))
         self.assertTrue(saveDB3(n))
