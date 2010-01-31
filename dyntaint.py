@@ -44,7 +44,10 @@ def t_list(l):
 
 def t_tuple(l):
 	return tuple([t_(x) for x in l])
-	
+
+def t_set(s):
+    return set([t_(x) for x in s])
+    
 def t_dict(d):
     klass = type(d) # es comun que los frameworks extiendan dict con 
                     # nuevos metodos, como en web.py
@@ -57,6 +60,8 @@ def t_(o):
         return t_list(o)
     elif isinstance(o, tuple):
         return t_tuple(o)
+    elif isinstance(o, set):
+        return t_set(o)        
     elif isinstance(o, dict):
         return t_dict(o)
     else:
@@ -199,9 +204,10 @@ def update_taints(o, taints):
         [update_taints(x, taints) for x in o]        
     elif isinstance(o, tuple):
         [update_taints(x, taints) for x in o]
+    elif isinstance(o, set):
+        [update_taints(x, taints) for x in o]
     elif isinstance(o, dict):
-        for k, v in o.iteritems():
-            update_taints(v, taints)
+        [update_taints(v, taints) for v in o.values()]
 
 def wrap2(cls, method):
     def _w(self, *args, **kwargs):
