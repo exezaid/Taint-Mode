@@ -538,7 +538,6 @@ class TestINT(unittest.TestCase):
         '''If i is a tainted int, float(i) is tainted too.'''
         i = some_input(1)
         f = float(i)
-        type(f)
         self.assertTrue(tainted(f))
         
     def test_radd(self):
