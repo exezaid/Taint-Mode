@@ -522,7 +522,7 @@ class TestINT(unittest.TestCase):
 
     def test_and(self):
         i = some_input(1)
-        #self.assertTrue(tainted(i and 2)) retorna bool
+        self.assertTrue(tainted(i & 2))
 
     def test_div(self):
         i = some_input(1)
@@ -533,6 +533,18 @@ class TestINT(unittest.TestCase):
         a,b = divmod(i, 2)
         self.assertTrue(tainted(a))
         self.assertTrue(tainted(b))        
+    
+    def test_float(self):
+        '''If i is a tainted int, float(i) is tainted too.'''
+        i = some_input(1)
+        f = float(i)
+        type(f)
+        self.assertTrue(tainted(f))
+        
+    def test_radd(self):
+        i = some_input(1)
+        self.assertTrue(tainted(2 + i))
+
                                                                 
 class TestTaints(unittest.TestCase):   
 

@@ -277,25 +277,35 @@ def taint_class(klass, methods):
     for name, attr in [(m, d[m]) for m in methods]:
         if inspect.ismethod(attr) or inspect.ismethoddescriptor(attr):
             setattr(tklass, name, wrap2(attr))
-    setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
+    if '__radd__' not in methods:   # str has no __radd__ method, it does
+        setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
     
     return tklass      
 
+# Revisar de no incluir atributos, no metodos, no callables
 str_methods = ['__add__', '__getitem__', '__getslice__', '__len__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
 
 # ojo, hay algunos atribujos que no se pueden setear, los voy borrando de aqui
 # en el futuro usar dir() y manejar la excepcion
-# elimino: __repr__ __cmp__ __getattribute__ __new__
+# elimino: __repr__ __cmp__ __getattribute__ __new__ __init__
+# '__nonzero__' pide q sea bool o int
 int_methods = ['__abs__', '__add__', '__and__', '__coerce__', '__div__', '__divmod__', '__doc__', '__float__',
 '__floordiv__', '__format__', '__getnewargs__', '__hash__', '__hex__', '__index__', '__int__',
-'__invert__', '__long__', '__lshift__', '__mod__', '__mul__', '__neg__', '__nonzero__', '__oct__', '__or__',
+'__invert__', '__long__', '__lshift__', '__mod__', '__mul__', '__neg__', '__oct__', '__or__',
 '__pos__', '__pow__', '__radd__', '__rand__', '__rdiv__', '__rdivmod__', '__rfloordiv__', '__rlshift__', '__rmod__',
 '__rmul__', '__ror__', '__rpow__', '__rrshift__', '__rshift__', '__rsub__', '__rtruediv__', '__rxor__', '__str__', '__sub__', '__truediv__', '__trunc__', '__xor__', 'conjugate', 'denominator', 'imag', 'numerator', 'real']
 
+# nose pueden sobreescribir
+# __class__  '__reduce__', '__reduce_ex__'
+# TODO: Comparar listas para ver que metodos no se incluyen
+float_methods = ['__abs__', '__add__', '__coerce__', '__div__', '__divmod__', '__doc__', '__eq__', '__float__', '__floordiv__', '__format__', '__ge__', '__getformat__', '__getnewargs__', '__gt__', '__hash__', '__int__', '__le__', '__long__', '__lt__', '__mod__', '__mul__', '__ne__', '__neg__', '__nonzero__', '__pos__', '__pow__', '__radd__', '__rdiv__', '__rdivmod__', '__repr__', '__rfloordiv__', '__rmod__', '__rmul__', '__rpow__', '__rsub__', '__rtruediv__', '__setformat__', '__str__', '__sub__', '__truediv__', '__trunc__', 'as_integer_ratio', 'conjugate', 'fromhex', 'hex', 'imag', 'is_integer', 'real']
+
+# TODO: utilizar type para crear las clases y asi poder ponerles un nombre
 STR = taint_class(str, str_methods)
 INT = taint_class(int, int_methods)
+FLOAT = taint_class(float, float_methods)
 
-tclasses = {str: STR, int: INT}
+tclasses = {str: STR, int: INT, float: FLOAT}
 
 def tclass(o):
     '''Tainted instance factory.'''
