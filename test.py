@@ -540,11 +540,88 @@ class TestINT(unittest.TestCase):
         f = float(i)
         self.assertTrue(tainted(f))
         
+    def test_floordiv(self):
+        i = some_input(1)        
+        d = i // 2
+        self.assertTrue(tainted(d))
+        
     def test_radd(self):
         i = some_input(1)
         self.assertTrue(tainted(2 + i))
 
-                                                                
+class TestFLOAT(unittest.TestCase):
+
+    def test_abs(self):
+        f = some_input(1.0)
+        self.assertTrue(tainted(abs(f)))
+
+    def test_add(self):
+        f = some_input(1.0)
+        self.assertTrue(tainted(f + 2))
+
+    def test_div(self):
+        f = some_input(1.0)
+        self.assertTrue(tainted(f / 2))
+
+    def test_divmod(self):
+        f = some_input(1.0)
+        a,b = divmod(f, 2)
+        self.assertTrue(tainted(a))
+        self.assertTrue(tainted(b))        
+    
+    def test_int(self):
+        '''If f is a tainted float, int(f) is tainted too.'''
+        f = some_input(1.0)
+        i = float(f)
+        self.assertTrue(tainted(i))
+        
+    def test_floordiv(self):
+        f = some_input(1.0)        
+        d = f // 2
+        self.assertTrue(tainted(d))
+        
+    def test_radd(self):
+        f = some_input(1.0)
+        self.assertTrue(tainted(2 + f))
+
+class TestCHR(unittest.TestCase):
+    '''Test the chr built-it function. If the int-like argument is tainted,
+     the returned string must be tainted too.'''
+
+    def test_no_tainted_ord(self):
+        c = chr(42)
+        self.assertFalse(tainted(c))
+
+    def test_tainted_ord(self):
+        c = chr(INT(42))
+        self.assertEqual(STR, type(c))
+
+    def test_same_taints(self):
+        o = INT(42)
+        o.taints.add(XSS)
+        c = chr(o)
+        self.assertTrue(XSS in c.taints)
+        self.assertEqual(1, len(c.taints))
+        
+class TestORD(unittest.TestCase):
+    '''Test the ord built-it function. If the str-like argument is tainted,
+     the returned integer must be tainted too.'''
+
+    def test_no_tainted_char(self):
+        c = ord('*')
+        self.assertFalse(tainted(c))
+
+    def test_tainted_char(self):
+        c = ord(STR('*'))
+        self.assertEqual(INT, type(c))
+
+    def test_same_taints(self):
+        c = STR('*')
+        c.taints.add(XSS)
+        o = ord(c)
+        self.assertTrue(XSS in o.taints)
+        self.assertEqual(1, len(o.taints))
+                
 class TestTaints(unittest.TestCase):   
 
     def test_all_set(self):

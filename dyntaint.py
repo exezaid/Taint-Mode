@@ -12,7 +12,7 @@ import pdb
 import inspect
 import sys
 
-######################################
+
 # This alternative implementation of
 # len let INT to be returned by len
 original_len = len
@@ -21,7 +21,24 @@ def len(o):
     if isinstance(l, int):
         return l
     original_len(o)
-######################################
+
+original_chr = chr
+def chr(o):
+    if isinstance(o, INT):
+        s = STR(original_chr(o))
+        s.taints.update(o.taints)
+        return s
+    return original_chr(o)        
+
+original_ord = ord
+def ord(c):
+    if isinstance(c, STR):
+        i = INT(original_ord(c))
+        i.taints.update(c.taints)
+        return i
+    return original_ord(c)        
+
+#-----------------------------------------------------------------------------#
 
 def ends_execution(b=True):
     global ENDS
@@ -236,10 +253,7 @@ def wrap2(method):
                 update_taints(r, a.taints)                
         return r
     return _w
-        
-#def i_string(s):
-#	return STR(s)
-	
+
 def i_list(l):
 	return [i_(x) for x in l]
 
@@ -252,8 +266,6 @@ def i_dict(d):
     return klass([(k, i_(v)) for k,v in d.items()])
 	
 def i_(o):
-    #if isinstance(o, basestring):
-    #    return i_string(o)
     if type(o) in tclasses.keys():
         return tclass(o)
     elif isinstance(o, list):
@@ -277,13 +289,12 @@ def taint_class(klass, methods):
     for name, attr in [(m, d[m]) for m in methods]:
         if inspect.ismethod(attr) or inspect.ismethoddescriptor(attr):
             setattr(tklass, name, wrap2(attr))
-    if '__radd__' not in methods:   # str has no __radd__ method, it does
+    if '__add__' in methods and '__radd__' not in methods:   # str has no __radd__ method, it does
         setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
     
     return tklass      
 
-# Revisar de no incluir atributos, no metodos, no callables
-str_methods = ['__add__', '__getitem__', '__getslice__', '__len__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
+str_methods = ['__add__', '__format__', '__getitem__', '__getslice__', '__len__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'format', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
 
 # ojo, hay algunos atribujos que no se pueden setear, los voy borrando de aqui
 # en el futuro usar dir() y manejar la excepcion
