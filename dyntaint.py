@@ -4,14 +4,17 @@ User level module.
 Juan Jose Conti <jjconti@gmail.com>
 '''
 ENDS = False
+RAISES = True
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
 KEYS = set(KEYS)
 
-from pprint import pprint
+class TaintException(Exception):
+    pass
+    
 import pdb
 import inspect
 import sys
-
+from itertools import chain
 
 # This alternative implementation of
 # len let INT to be returned by len
@@ -63,9 +66,6 @@ def reached(t, v=None):
     lineas = lineas[lno - 3: lno + 3]
     print "".join(lineas) 
     print "=" * 79
-    
-#def t_string(s):
-#	return taint(s)
 	
 def t_list(l):
 	return [t_(x) for x in l]
@@ -82,8 +82,6 @@ def t_dict(d):
     return klass([(k, t_(v)) for k,v in d.items()])
 	
 def t_(o):
-    #if isinstance(o, basestring):
-    #    return t_string(o)
     if type(o) in tclasses.keys():
         return taint(o)
     elif isinstance(o, list):
@@ -131,7 +129,7 @@ def untrusted(f):
 
 def validator(v, nargs=[], nkwargs=[]):
     '''
-    Mark a function or methos as capable to validate its input.
+    Mark a function or method as capable to validate its input.
     
     nargs is a list of positions. Positional arguments in that positions are
     the ones validated.
@@ -178,17 +176,21 @@ def ssink(v=None, reached=reached):
     '''
     def _solve(a, f, args, kwargs):
         if ENDS:
-            return reached(a)
+            if RAISES:
+                reached(a)
+                raise TaintException
+            else:
+                return reached(a)
         else:
             reached(a)
             return f(*args, **kwargs)
                         
     def _ssink(f):
         def inner(*args, **kwargs):
-            allargs = set(args) | set(kwargs.values())
+            allargs = chain(args, kwargs.values())
             if v is None:   # sensitive to ALL
                 for a in allargs:
-                    if hasattr(a, 'taints') and a.taints:
+                    if hasattr(a, 'taints') and a.taints:   # cambiar por algo que revise los niveles de dict/lists
                         return _solve(a, f, args, kwargs)
             else:
                 for a in allargs:
