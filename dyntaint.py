@@ -4,7 +4,7 @@ User level module.
 Juan Jose Conti <jjconti@gmail.com>
 '''
 ENDS = False
-RAISES = True
+RAISES = False
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
 KEYS = set(KEYS)
 
@@ -230,8 +230,6 @@ def taint(var, v=None):
         return var
             
 def update_taints(o, taints):
-    #if isinstance(o, STR):
-    #    o.taints.update(taints)
     if hasattr(o, 'taints'):
         o.taints.update(taints)
     elif isinstance(o, list):
@@ -296,7 +294,10 @@ def taint_class(klass, methods):
     
     return tklass      
 
-str_methods = ['__add__', '__format__', '__getitem__', '__getslice__', '__len__', '__mod__', '__mul__', '__rmod__', '__rmul__', 'capitalize', 'center', 'expandtabs', 'format', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
+str_methods = ['__add__', '__contains__', '__doc__', '__eq__', '__format__', '__ge__', '__getitem__', '__getnewargs__', '__getslice__', '__gt__', '__hash__', '__le__', '__len__', '__lt__', '__mod__', '__mul__', '__ne__', '__rmod__', '__rmul__', '__str__', '_formatter_field_name_split', '_formatter_parser', 'capitalize', 'center', 'count', 'decode', 'encode', 'endswith', 'expandtabs', 'find', 'format', 'index', 'isalnum', 'isalpha', 'isdigit', 'islower', 'isspace', 'istitle', 'isupper', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rfind', 'rindex', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'startswith', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
+
+unicode_methods = ['__add__', '__contains__', '__doc__', '__eq__', '__format__', '__ge__', '__getitem__', '__getnewargs__', '__getslice__', '__gt__', '__hash__', '__le__', '__len__', '__lt__', '__mod__', '__mul__', '__ne__', '__rmod__', '__rmul__', '__str__', '_formatter_field_name_split', '_formatter_parser', 'capitalize', 'center', 'count', 'decode', 'encode', 'endswith', 'expandtabs', 'find', 'format', 'index', 'isalnum', 'isalpha', 'isdecimal', 'isdigit', 'islower', 'isnumeric', 'isspace', 'istitle', 'isupper', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rfind', 'rindex', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'startswith', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
+
 
 # ojo, hay algunos atribujos que no se pueden setear, los voy borrando de aqui
 # en el futuro usar dir() y manejar la excepcion
@@ -315,10 +316,11 @@ float_methods = ['__abs__', '__add__', '__coerce__', '__div__', '__divmod__', '_
 
 # TODO: utilizar type para crear las clases y asi poder ponerles un nombre
 STR = taint_class(str, str_methods)
+UNICODE = taint_class(unicode, unicode_methods)
 INT = taint_class(int, int_methods)
 FLOAT = taint_class(float, float_methods)
 
-tclasses = {str: STR, int: INT, float: FLOAT}
+tclasses = {str: STR, int: INT, float: FLOAT, unicode: UNICODE}
 
 def tclass(o):
     '''Tainted instance factory.'''

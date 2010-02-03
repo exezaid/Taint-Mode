@@ -584,6 +584,18 @@ class TestFLOAT(unittest.TestCase):
         f = some_input(1.0)
         self.assertTrue(tainted(2 + f))
 
+class TestUNICODE(unittest.TestCase):
+
+    def test_add(self):
+        u = some_input(u'Asimov')
+        #self.assertEqual(UNICODE, type(u))
+        self.assertTrue(tainted(u + ' books'))
+
+    def test_contains(self):
+        u = some_input(u'Asimov')
+        #self.assertEqual(UNICODE, type(u))
+        self.assertTrue(tainted(u + ' books'))
+                
 class TestCHR(unittest.TestCase):
     '''Test the chr built-it function. If the int-like argument is tainted,
      the returned string must be tainted too.'''
