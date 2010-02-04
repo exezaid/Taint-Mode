@@ -606,7 +606,7 @@ class TestCHR(unittest.TestCase):
 
     def test_tainted_ord(self):
         c = chr(INT(42))
-        self.assertEqual(STR, type(c))
+        self.assertEqual(str, type(c))
 
     def test_same_taints(self):
         o = INT(42)
@@ -625,7 +625,7 @@ class TestORD(unittest.TestCase):
 
     def test_tainted_char(self):
         c = ord(STR('*'))
-        self.assertEqual(INT, type(c))
+        self.assertEqual(int, type(c))
 
     def test_same_taints(self):
         c = STR('*')
@@ -820,6 +820,26 @@ class UnstrustedDecorator(unittest.TestCase):
         self.assertTrue(tainted(u[1][1][1]))
         self.assertTrue(isinstance(u[1][0][1], STR))           
 
+class CleanerDecorator(unittest.TestCase):
+
+    def test_clener1(self):
+        i = some_input('1')
+        i = cleanOSI(i)
+        #cleanOSI('1')
+        self.assertFalse(OSI in i.taints)
+
+@validator(XSS, [0])
+def is_good(a):
+    return True
+    
+class ValidatorDecorator(unittest.TestCase):
+        
+    def test_validator(self):
+        i = some_input(1)
+        is_good(i)
+        self.assertFalse(XSS in i.taints)
+        self.assertTrue(SQLI in i.taints)
+        
 if __name__ == '__main__':
     unittest.main()
 
