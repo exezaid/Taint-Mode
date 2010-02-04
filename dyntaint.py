@@ -244,13 +244,16 @@ def update_taints(o, taints):
 def wrap2(method):
     def _w(self, *args, **kwargs):
         r = i_(method(self, *args, **kwargs))
+        t = set()
         update_taints(r, self.taints)
         for a in args:
             if hasattr(a, 'taints'):
-                update_taints(r, a.taints)
+                t.update(a.taints)
         for k,v in kwargs.items():
             if hasattr(v, 'taints'):
-                update_taints(r, a.taints)                
+                t.update(v.taints)
+        t.update(self.taints)
+        update_taints(r, t)                
         return r
     return _w
 
