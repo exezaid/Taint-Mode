@@ -21,13 +21,14 @@ def propagate_func(original):
         t = set()
         for a in args:
             mapt(a, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
-        for k,v in kwargs.items():
+        for v in kwargs.values():
             mapt(v, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
         r  = original(*args,**kwargs)
         if t == set([]):
             return r
-        r = mapt(r, tclass)
-        r.taints.update(t)
+        #r = mapt(r, tclass)
+        #r.taints.update(t)
+        r = taint_aware(r, t)
         return r
     return inner
    
@@ -119,7 +120,8 @@ def untrusted(f):
     '''     
     def inner(*args, **kwargs):
         r = f(*args, **kwargs)
-        return mapt(r, taint)
+        #return mapt(r, taint)
+        return taint_aware(r, KEYS)
     return inner
 
 def validator(v, nargs=[], nkwargs=[]):
@@ -235,15 +237,18 @@ def update_taints(r, t):
     mapt(r, lambda o: o.taints.update(t), lambda o: hasattr(o, 'taints'))    
   
 def taint_aware(r, ts=set()):
-    pass
-    #tclass mapt    
+    r = mapt(r, tclass)
+    update_taints(r, ts)
+    return r
+    
 def propagate_method(method):
     def _w(self, *args, **kwargs):
-        r = mapt(method(self, *args, **kwargs), tclass)
+        r = method(self, *args, **kwargs)
+        r = taint_aware(r)
         t = set()
         for a in args:
             collect_tags(a, t)
-        for k,v in kwargs.items():
+        for v in kwargs.values():
             collect_tags(v, t)
         t.update(self.taints)         
         update_taints(r, t)
