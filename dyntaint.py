@@ -252,7 +252,7 @@ def propagate_method(method):
 
 import inspect
 
-def taint_class1(klass, methods):
+def taint_class(klass, methods):
     class tklass(klass):
         def __new__(cls, *args, **kwargs):
             self = super(tklass, cls).__new__(cls, *args, **kwargs)
@@ -267,52 +267,23 @@ def taint_class1(klass, methods):
     
     return tklass      
 
-dont_override = ['__repr__', '__cmp__', '__getattribute__', '__new__', '__init__','__nonzero__',
-                 '__class__', '__reduce__', '__reduce_ex__']
+dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__', '__init__','__nonzero__',
+                 '__class__', '__reduce__', '__reduce_ex__'])
 
-def taint_class(klass):
-    class tklass(klass):
-        def __new__(cls, *args, **kwargs):
-            self = super(tklass, cls).__new__(cls, *args, **kwargs)
-            self.taints = set()
-            return self
-    d = klass.__dict__
-    for name, attr in klass.__dict__.iteritems():#[(m, d[m]) for m in methods]:
-        if (inspect.ismethod(attr) or inspect.ismethoddescriptor(attr)) and name not in dont_override:
-            try:
-                setattr(tklass, name, propagate_method(attr))
-            except:
-                print "No se modifica", name                
-    if '__add__' in klass.__dict__.keys() and '__radd__' not in klass.__dict__.keys():   # str has no __radd__ method, it does
-        setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
+def attributes(klass):
+    a = set(klass.__dict__.keys())
+    return a - dont_override
     
-    return tklass 
-    
-str_methods = ['__add__', '__contains__', '__doc__', '__eq__', '__format__', '__ge__', '__getitem__', '__getnewargs__', '__getslice__', '__gt__', '__hash__', '__le__', '__len__', '__lt__', '__mod__', '__mul__', '__ne__', '__rmod__', '__rmul__', '__str__', '_formatter_field_name_split', '_formatter_parser', 'capitalize', 'center', 'count', 'decode', 'encode', 'endswith', 'expandtabs', 'find', 'format', 'index', 'isalnum', 'isalpha', 'isdigit', 'islower', 'isspace', 'istitle', 'isupper', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rfind', 'rindex', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'startswith', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
-
-unicode_methods = ['__add__', '__contains__', '__doc__', '__eq__', '__format__', '__ge__', '__getitem__', '__getnewargs__', '__getslice__', '__gt__', '__hash__', '__le__', '__len__', '__lt__', '__mod__', '__mul__', '__ne__', '__rmod__', '__rmul__', '__str__', '_formatter_field_name_split', '_formatter_parser', 'capitalize', 'center', 'count', 'decode', 'encode', 'endswith', 'expandtabs', 'find', 'format', 'index', 'isalnum', 'isalpha', 'isdecimal', 'isdigit', 'islower', 'isnumeric', 'isspace', 'istitle', 'isupper', 'join', 'ljust', 'lower', 'lstrip', 'partition', 'replace', 'rfind', 'rindex', 'rjust', 'rpartition', 'rsplit', 'rstrip', 'split', 'splitlines', 'startswith', 'strip', 'swapcase', 'title', 'translate', 'upper', 'zfill']
-
-
-# ojo, hay algunos atribujos que no se pueden setear, los voy borrando de aqui
-# en el futuro usar dir() y manejar la excepcion
-# elimino: __repr__ __cmp__ __getattribute__ __new__ __init__
-# '__nonzero__' pide q sea bool o int
-int_methods = ['__abs__', '__add__', '__and__', '__coerce__', '__div__', '__divmod__', '__doc__', '__float__',
-'__floordiv__', '__format__', '__getnewargs__', '__hash__', '__hex__', '__index__', '__int__',
-'__invert__', '__long__', '__lshift__', '__mod__', '__mul__', '__neg__', '__oct__', '__or__',
-'__pos__', '__pow__', '__radd__', '__rand__', '__rdiv__', '__rdivmod__', '__rfloordiv__', '__rlshift__', '__rmod__',
-'__rmul__', '__ror__', '__rpow__', '__rrshift__', '__rshift__', '__rsub__', '__rtruediv__', '__rxor__', '__str__', '__sub__', '__truediv__', '__trunc__', '__xor__', 'conjugate', 'denominator', 'imag', 'numerator', 'real']
-
-# nose pueden sobreescribir
-# __class__  '__reduce__', '__reduce_ex__'
-# TODO: Comparar listas para ver que metodos no se incluyen
-float_methods = ['__abs__', '__add__', '__coerce__', '__div__', '__divmod__', '__doc__', '__eq__', '__float__', '__floordiv__', '__format__', '__ge__', '__getformat__', '__getnewargs__', '__gt__', '__hash__', '__int__', '__le__', '__long__', '__lt__', '__mod__', '__mul__', '__ne__', '__neg__', '__nonzero__', '__pos__', '__pow__', '__radd__', '__rdiv__', '__rdivmod__', '__repr__', '__rfloordiv__', '__rmod__', '__rmul__', '__rpow__', '__rsub__', '__rtruediv__', '__setformat__', '__str__', '__sub__', '__truediv__', '__trunc__', 'as_integer_ratio', 'conjugate', 'fromhex', 'hex', 'imag', 'is_integer', 'real']
+str_methods = attributes(str)
+unicode_methods = attributes(unicode)
+int_methods = attributes(int)
+float_methods = attributes(float)
 
 # TODO: utilizar type para crear las clases y asi poder ponerles un nombre
-STR = taint_class(str)#, str_methods)
-UNICODE = taint_class(unicode)#, unicode_methods)
-INT = taint_class(int)#, int_methods)
-FLOAT = taint_class(float)#, float_methods)
+STR = taint_class(str, str_methods)
+UNICODE = taint_class(unicode, unicode_methods)
+INT = taint_class(int, int_methods)
+FLOAT = taint_class(float, float_methods)
 
 tclasses = {str: STR, int: INT, float: FLOAT, unicode: UNICODE}
 
