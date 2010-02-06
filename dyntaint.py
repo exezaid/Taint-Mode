@@ -233,7 +233,10 @@ def collect_tags(s, t):
 
 def update_taints(r, t):
     mapt(r, lambda o: o.taints.update(t), lambda o: hasattr(o, 'taints'))    
-    
+  
+def taint_aware(r, ts=set()):
+    pass
+    #tclass mapt    
 def propagate_method(method):
     def _w(self, *args, **kwargs):
         r = mapt(method(self, *args, **kwargs), tclass)
