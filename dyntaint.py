@@ -3,6 +3,12 @@ Dynamic Taint Mode for Python.
 User level module.
 Juan Jose Conti <jjconti@gmail.com>
 '''
+
+import pdb
+import inspect
+import sys
+from itertools import chain
+
 ENDS = False
 RAISES = False
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
@@ -11,11 +17,10 @@ KEYS = set(KEYS)
 class TaintException(Exception):
     pass
     
-import pdb
-import inspect
-import sys
-from itertools import chain
-
+def ends_execution(b=True):
+    global ENDS
+    ENDS = b
+        
 def propagate_func(original):
     def inner (*args, **kwargs):
         t = set()
@@ -26,42 +31,13 @@ def propagate_func(original):
         r  = original(*args,**kwargs)
         if t == set([]):
             return r
-        #r = mapt(r, tclass)
-        #r.taints.update(t)
         r = taint_aware(r, t)
         return r
     return inner
    
-# This alternative implementation of
-# len let INT to be returned by len
 len = propagate_func(len)     
 ord = propagate_func(ord)
 chr = propagate_func(chr)
-#-----------------------------------------------------------------------------#
-
-def ends_execution(b=True):
-    global ENDS
-    ENDS = b
-    
-def reached(t, v=None):
-    '''
-    Execute if a tainted value reaches a sensitive sink
-    for the vulnerability v.
-    '''
-    frame = sys._getframe(3)
-    filename = inspect.getfile(frame)
-    lno = frame.f_lineno
-    print "=" * 79
-    print "Violacion en la linea %d del archivo %s" % (lno, filename)
-    print "Valor manchado: %s" % t
-    print '-' * 79
-    lineas = inspect.findsource(frame)[0]   # cambiar a getsourceline cuando el parche de gg este incorporado
-    lineas = ['    %s' % l for l in lineas]
-    lno = lno - 1
-    lineas[lno] = '--> ' + lineas[lno][4:]
-    lineas = lineas[lno - 3: lno + 3]
-    print "".join(lineas) 
-    print "=" * 79
 	
 def mapt_list(l, f, c):
 	return [mapt(x, f, c) for x in l]
@@ -73,8 +49,8 @@ def mapt_set(s, f, c):
     return set([mapt(x, f, c) for x in s])
     
 def mapt_dict(d, f, c):
-    klass = type(d) # es comun que los frameworks extiendan dict con 
-                    # nuevos metodos, como en web.py
+    klass = type(d) # It's quite common for frameworks to extend dict
+                    # with useful new methdos - i.e. web.py
     return klass([(k, mapt(v, f, c)) for k,v in d.items()])
 	
 def mapt(o, f, check=lambda o: type(o) in tclasses.keys()):
@@ -90,6 +66,8 @@ def mapt(o, f, check=lambda o: type(o) in tclasses.keys()):
         return mapt_dict(o, f, check)
     else:
         return o
+
+# Decorators
 			
 def untrusted_args(nargs=[], nkwargs=[]):
     '''
@@ -165,7 +143,27 @@ def cleaner(v):
             return r
         return inner
     return _cleaner
-    
+
+def reached(t, v=None):
+    '''
+    Execute if a tainted value reaches a sensitive sink
+    for the vulnerability v.
+    '''
+    frame = sys._getframe(3)
+    filename = inspect.getfile(frame)
+    lno = frame.f_lineno
+    print "=" * 79
+    print "Violacion en la linea %d del archivo %s" % (lno, filename)
+    print "Valor manchado: %s" % t
+    print '-' * 79
+    lineas = inspect.findsource(frame)[0]   # cambiar a getsourceline cuando el parche de gg este incorporado
+    lineas = ['    %s' % l for l in lineas]
+    lno = lno - 1
+    lineas[lno] = '--> ' + lineas[lno][4:]
+    lineas = lineas[lno - 3: lno + 3]
+    print "".join(lineas) 
+    print "=" * 79
+        
 def ssink(v=None, reached=reached):
     '''
     Mark a function or method as sensitive to tainted data.
@@ -219,7 +217,7 @@ def taint(var, v=None):
     Helper function for taint variables.
     Empty string can't be tainted.
     '''
-    if var == '':   #REVEER
+    if var == '':   #sure of this?
         return var
     var = tclass(var)
     if v:
@@ -228,6 +226,8 @@ def taint(var, v=None):
     else:
         var.taints.update(KEYS)
         return var
+
+# Taint-aware classes
 
 def collect_tags(s, t):
     '''Collect tags from a source s into a target t.'''
@@ -270,7 +270,8 @@ def taint_class(klass, methods):
     if '__add__' in methods and '__radd__' not in methods:   # str has no __radd__ method, it does
         setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
     
-    return tklass      
+    tklass.__name__ = klass.__name__.upper()
+    return tklass
 
 dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__', '__init__','__nonzero__',
                  '__class__', '__reduce__', '__reduce_ex__'])
