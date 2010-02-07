@@ -14,3 +14,13 @@ tests para @validator
 paper
 
 las dos lineas que podemos desprender son: tech report, casos de estudio    
+
+
+
+
+
+
+
+Hace algo estatico? 
+
+http://docs.python.org/dev/library/language.html

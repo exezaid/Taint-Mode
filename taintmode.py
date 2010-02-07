@@ -1,9 +1,3 @@
-'''
-Dynamic Taint Mode for Python.
-User level module.
-Juan Jose Conti <jjconti@gmail.com>
-'''
-
 import pdb
 import inspect
 import sys
@@ -281,7 +275,7 @@ def taint_class(klass, methods):
     
     return tklass
 
-dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__',
+dont_override = set(['__repr__', '__getattribute__', '__new__',
                      '__init__','__nonzero__', '__reduce__', '__reduce_ex__'])
 
 def attributes(klass):
