@@ -7,7 +7,9 @@ tests para @validator
 
     lineas = inspect.findsource(frame)[0]   # cambiar a getsourceline cuando el parche de gg este incorporado
     
+    en taint_class
     
+        tklass.__name__ = klass.__name__.upper()
     
 paper
 
