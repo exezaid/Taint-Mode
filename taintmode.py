@@ -9,11 +9,16 @@ import inspect
 import sys
 from itertools import chain
 
+          
 ENDS = False
 RAISES = False
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
 TAGS = set(KEYS)
 
+__all__ = ['tainted', 'taint', 'untrusted', 'untrusted_args', 'ssink', 
+           'cleaner', 'STR', 'INT', 'FLOAT', 'UNICODE', 'chr', 'ord', 'len',
+           'ends_execution', 'XSS', 'SQLI', 'OSI', 'II']
+           
 class TaintException(Exception):
     pass
     
@@ -128,7 +133,10 @@ def remove_taint(v):
         if hasattr(o, 'taints'):
             o.taints.discard(v)
     return _remove
-                    
+
+def remove_tags(r, v):
+    mapt(r, remove_taint(v), lambda o: True)
+    
 def cleaner(v):
     '''
     Mark a function or methos as capable to clean its input.
@@ -138,7 +146,7 @@ def cleaner(v):
     def _cleaner(f):    
         def inner(*args, **kwargs):
             r = f(*args, **kwargs)
-            mapt(r, remove_taint(v), lambda o: True)
+            remove_tags(r, v)
             return r
         return inner
     return _cleaner
@@ -232,12 +240,12 @@ def collect_tags(s, t):
     '''Collect tags from a source s into a target t.'''
     mapt(s, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
 
-def update_taints(r, t):
+def update_tags(r, t):
     mapt(r, lambda o: o.taints.update(t), lambda o: hasattr(o, 'taints'))    
   
 def taint_aware(r, ts=set()):
     r = mapt(r, tclass)
-    update_taints(r, ts)
+    update_tags(r, ts)
     return r
     
 def propagate_method(method):
@@ -250,7 +258,7 @@ def propagate_method(method):
         for v in kwargs.values():
             collect_tags(v, t)
         t.update(self.taints)         
-        update_taints(r, t)
+        update_tags(r, t)
         return r
     return _w
 
