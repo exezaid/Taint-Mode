@@ -279,7 +279,6 @@ def taint_class(klass, methods):
     if '__add__' in methods and '__radd__' not in methods:   # str has no __radd__ method, it does
         setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
     
-    tklass.__name__ = klass.__name__.upper()
     return tklass
 
 dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__',
