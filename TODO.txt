@@ -4,3 +4,11 @@ Creo que ya esta...
 Qué hacemos con Unicode?
 ==================================================
 tests para @validator
+
+    lineas = inspect.findsource(frame)[0]   # cambiar a getsourceline cuando el parche de gg este incorporado
+    
+    
+    
+paper
+
+las dos lineas que podemos desprender son: tech report, casos de estudio    

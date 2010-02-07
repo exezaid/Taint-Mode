@@ -1,4 +1,4 @@
-﻿'''
+'''
 Dynamic Taint Mode for Python.
 User level module.
 Juan Jose Conti <jjconti@gmail.com>
@@ -113,9 +113,9 @@ def validator(v, nargs=[], nkwargs=[]):
     nargs is a list of positions. Positional arguments in that positions are
     the ones validated.
 	nkwargs is a list of strings. Keyword arguments for those keys are the ones
-	validated.
+	validated.taints set
     If the function returns True, v will be removed from the the validated
-    inpunt .taints set.
+    inpunt.
     '''
     def _validator(f):
         def inner(*args, **kwargs):
@@ -160,10 +160,10 @@ def reached(t, v=None):
     filename = inspect.getfile(frame)
     lno = frame.f_lineno
     print "=" * 79
-    print "Violacion en la linea %d del archivo %s" % (lno, filename)
-    print "Valor manchado: %s" % t
+    print "Violation in line %d from file %s" % (lno, filename) # Localize this message
+    print "Tainted value: %s" % t
     print '-' * 79
-    lineas = inspect.findsource(frame)[0]   # cambiar a getsourceline cuando el parche de gg este incorporado
+    lineas = inspect.findsource(frame)[0]
     lineas = ['    %s' % l for l in lineas]
     lno = lno - 1
     lineas[lno] = '--> ' + lineas[lno][4:]
@@ -175,8 +175,8 @@ def ssink(v=None, reached=reached):
     '''
     Mark a function or method as sensitive to tainted data.
     
-    If it is called with a value with v in .taints
-    (or a non empty .taints v is None),
+    If it is called with a value with the v tag
+    (or any tag if v is None),
     it's not executed and reached is executed instead.
     '''
     def _solve(a, f, args, kwargs):
@@ -195,11 +195,15 @@ def ssink(v=None, reached=reached):
             allargs = chain(args, kwargs.values())
             if v is None:   # sensitive to ALL
                 for a in allargs:
-                    if hasattr(a, 'taints') and a.taints:   # cambiar por algo que revise los niveles de dict/lists
+                    t = set()
+                    collect_tags(a, t)
+                    if t:
                         return _solve(a, f, args, kwargs)
             else:
                 for a in allargs:
-                    if hasattr(a, 'taints') and v in a.taints:
+                    t = set()
+                    collect_tags(a, t)
+                    if v in t:
                         return _solve(a, f, args, kwargs)
             return f(*args, **kwargs)
         return inner
@@ -290,7 +294,6 @@ unicode_methods = attributes(unicode)
 int_methods = attributes(int)
 float_methods = attributes(float)
 
-# TODO: utilizar type para crear las clases y asi poder ponerles un nombre
 STR = taint_class(str, str_methods)
 UNICODE = taint_class(unicode, unicode_methods)
 INT = taint_class(int, int_methods)
