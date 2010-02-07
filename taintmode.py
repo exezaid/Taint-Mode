@@ -15,7 +15,7 @@ RAISES = False
 KEYS  = [XSS, SQLI, OSI, II] = range(4)
 TAGS = set(KEYS)
 
-__all__ = ['tainted', 'taint', 'untrusted', 'untrusted_args', 'ssink', 
+__all__ = ['tainted', 'taint', 'untrusted', 'untrusted_args', 'ssink', 'validator', 
            'cleaner', 'STR', 'INT', 'FLOAT', 'UNICODE', 'chr', 'ord', 'len',
            'ends_execution', 'XSS', 'SQLI', 'OSI', 'II']
            
@@ -249,18 +249,16 @@ def taint_aware(r, ts=set()):
     return r
     
 def propagate_method(method):
-    def _w(self, *args, **kwargs):
+    def inner(self, *args, **kwargs):
         r = method(self, *args, **kwargs)
-        r = taint_aware(r)
         t = set()
         for a in args:
             collect_tags(a, t)
         for v in kwargs.values():
             collect_tags(v, t)
-        t.update(self.taints)         
-        update_tags(r, t)
-        return r
-    return _w
+        t.update(self.taints)
+        return taint_aware(r, t)
+    return inner
 
 import inspect
 
@@ -280,8 +278,8 @@ def taint_class(klass, methods):
     tklass.__name__ = klass.__name__.upper()
     return tklass
 
-dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__', '__init__','__nonzero__',
-                 '__class__', '__reduce__', '__reduce_ex__'])
+dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__',
+                     '__init__','__nonzero__', '__reduce__', '__reduce_ex__'])
 
 def attributes(klass):
     a = set(klass.__dict__.keys())
