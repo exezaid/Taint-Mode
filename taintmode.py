@@ -248,6 +248,7 @@ def taint(o, v=None):
     return taint_aware(o, ts)
 
 # ------------------------- Taint-aware classes -------------------------------
+
 def propagate_method(method):
     def inner(self, *args, **kwargs):
         r = method(self, *args, **kwargs)
