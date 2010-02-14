@@ -3,30 +3,35 @@ import inspect
 import sys
 from itertools import chain
 
-          
-ENDS = False
-RAISES = False
-KEYS  = [XSS, SQLI, OSI, II] = range(4)
-TAGS = set(KEYS)
 
 __all__ = ['tainted', 'taint', 'untrusted', 'untrusted_args', 'ssink', 'validator', 
            'cleaner', 'STR', 'INT', 'FLOAT', 'UNICODE', 'chr', 'ord', 'len',
            'ends_execution', 'XSS', 'SQLI', 'OSI', 'II']
+
+          
+ENDS = False
+RAISES = False
+KEYS  = [XSS, SQLI, OSI, II] = range(1,5)
+TAGS = set(KEYS)
+
            
 class TaintException(Exception):
     pass
+
     
 def ends_execution(b=True):
     global ENDS
     ENDS = b
-        
+
+
+# -------------- Taint-aware functions --------------------------
 def propagate_func(original):
     def inner (*args, **kwargs):
         t = set()
         for a in args:
-            mapt(a, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
+            collect_tags(a,t)
         for v in kwargs.values():
-            mapt(v, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
+            collect_tags(v,t)
         r  = original(*args,**kwargs)
         if t == set([]):
             return r
@@ -38,35 +43,52 @@ len = propagate_func(len)
 ord = propagate_func(ord)
 chr = propagate_func(chr)
 	
-def mapt_list(l, f, c):
-	return [mapt(x, f, c) for x in l]
+#----------------- Auxiliaries functions -------------------------
 
-def mapt_tuple(t, f, c):
-	return tuple([mapt(x, f, c) for x in t])
-
-def mapt_set(s, f, c):
-    return set([mapt(x, f, c) for x in s])
-    
-def mapt_dict(d, f, c):
-    klass = type(d) # It's quite common for frameworks to extend dict
-                    # with useful new methdos - i.e. web.py
-    return klass([(k, mapt(v, f, c)) for k,v in d.items()])
-	
 def mapt(o, f, check=lambda o: type(o) in tclasses.keys()):
     if check(o):
         return f(o)
     elif isinstance(o, list):
-        return mapt_list(o, f, check)
+        return [mapt(x, f, check) for x in o] 
     elif isinstance(o, tuple):
-        return mapt_tuple(o, f, check)
+        return tuple([mapt(x, f, check) for x in o])
     elif isinstance(o, set):
-        return mapt_set(o, f, check)        
+        return  set([mapt(x, f, check) for x in o])         
     elif isinstance(o, dict):
-        return mapt_dict(o, f, check)
+        klass = type(o) # It's quite common for frameworks to extend dict
+                        # with useful new methdos - i.e. web.py
+        return klass([(k, mapt(v, f, check)) for k,v in o.items()])
     else:
         return o
 
-# Decorators
+
+def remove_taint(v):
+    def _remove(o):
+        if hasattr(o, 'taints'):
+            o.taints.discard(v)
+    return _remove
+
+
+def remove_tags(r, v):
+    mapt(r, remove_taint(v), lambda o: True)
+
+
+def collect_tags(s, t):
+    '''Collect tags from a source s into a target t.'''
+    mapt(s, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
+
+
+def update_tags(r, t):
+    mapt(r, lambda o: o.taints.update(t), lambda o: hasattr(o, 'taints'))    
+
+  
+def taint_aware(r, ts=set()):
+    r = mapt(r, tclass)
+    update_tags(r, ts)
+    return r
+
+
+#--------------------- Decorators -----------------------------------------------
 			
 def untrusted_args(nargs=[], nkwargs=[]):
     '''
@@ -117,19 +139,11 @@ def validator(v, nargs=[], nkwargs=[]):
             if r:
                 tovalid = set([args[n] for n in nargs]) | set([kwargs[n] for n in nkwargs])
                 for a in tovalid:
-                    mapt(a, remove_taint(v), lambda o: True)
+                    remove_tags(a,v)
             return r
         return inner
     return _validator
     
-def remove_taint(v):
-    def _remove(o):
-        if hasattr(o, 'taints'):
-            o.taints.discard(v)
-    return _remove
-
-def remove_tags(r, v):
-    mapt(r, remove_taint(v), lambda o: True)
     
 def cleaner(v):
     '''
@@ -217,35 +231,20 @@ def tainted(o, v=None):
         return True
     return False
 
-def taint(var, v=None):
+def taint(o, v=None):
     '''
     Helper function for taint variables.
     Empty string can't be tainted.
     '''
-    if var == '':   #sure of this?
-        return var
-    var = tclass(var)
+    ts = set()
     if v:
-        var.taints.add(v)
-        return var
+         ts.add(v)
     else:
-        var.taints.update(TAGS)
-        return var
+         ts.update(TAGS)
 
-# Taint-aware classes
+    return taint_aware(o,ts)
 
-def collect_tags(s, t):
-    '''Collect tags from a source s into a target t.'''
-    mapt(s, lambda o: t.update(o.taints), lambda o: hasattr(o, 'taints'))
-
-def update_tags(r, t):
-    mapt(r, lambda o: o.taints.update(t), lambda o: hasattr(o, 'taints'))    
-  
-def taint_aware(r, ts=set()):
-    r = mapt(r, tclass)
-    update_tags(r, ts)
-    return r
-    
+# -------------------------- Taint-aware classes -------------------------------------    
 def propagate_method(method):
     def inner(self, *args, **kwargs):
         r = method(self, *args, **kwargs)
@@ -275,8 +274,12 @@ def taint_class(klass, methods):
     
     return tklass
 
-dont_override = set(['__repr__', '__getattribute__', '__new__',
+
+dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__',
                      '__init__','__nonzero__', '__reduce__', '__reduce_ex__'])
+
+
+#-------- Taint-aware classes for strings, integers, floats, and unicode --------------- 
 
 def attributes(klass):
     a = set(klass.__dict__.keys())
