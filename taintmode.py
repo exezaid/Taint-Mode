@@ -1,17 +1,19 @@
-import pdb
+'''
+Taint Mode for Python via a Library
+'''
 import inspect
 import sys
 from itertools import chain
 
 
-__all__ = ['tainted', 'taint', 'untrusted', 'untrusted_args', 'ssink', 'validator', 
-           'cleaner', 'STR', 'INT', 'FLOAT', 'UNICODE', 'chr', 'ord', 'len',
-           'ends_execution', 'XSS', 'SQLI', 'OSI', 'II']
+__all__ = ['tainted', 'taint', 'untrusted', 'untrusted_args', 'ssink',
+           'validator', 'cleaner', 'STR', 'INT', 'FLOAT', 'UNICODE', 'chr',
+           'ord', 'len', 'ends_execution', 'XSS', 'SQLI', 'OSI', 'II']
 
           
 ENDS = False
 RAISES = False
-KEYS  = [XSS, SQLI, OSI, II] = range(1,5)
+KEYS  = [XSS, SQLI, OSI, II] = range(1, 5)
 TAGS = set(KEYS)
 
            
@@ -24,15 +26,15 @@ def ends_execution(b=True):
     ENDS = b
 
 
-# -------------- Taint-aware functions --------------------------
+# ------------------------- Taint-aware functions -----------------------------
 def propagate_func(original):
     def inner (*args, **kwargs):
         t = set()
         for a in args:
-            collect_tags(a,t)
+            collect_tags(a, t)
         for v in kwargs.values():
-            collect_tags(v,t)
-        r  = original(*args,**kwargs)
+            collect_tags(v, t)
+        r  = original(*args, **kwargs)
         if t == set([]):
             return r
         r = taint_aware(r, t)
@@ -43,7 +45,7 @@ len = propagate_func(len)
 ord = propagate_func(ord)
 chr = propagate_func(chr)
 	
-#----------------- Auxiliaries functions -------------------------
+# ------------------------- Auxiliaries functions -----------------------------
 
 def mapt(o, f, check=lambda o: type(o) in tclasses.keys()):
     if check(o):
@@ -57,7 +59,7 @@ def mapt(o, f, check=lambda o: type(o) in tclasses.keys()):
     elif isinstance(o, dict):
         klass = type(o) # It's quite common for frameworks to extend dict
                         # with useful new methdos - i.e. web.py
-        return klass([(k, mapt(v, f, check)) for k,v in o.items()])
+        return klass([(k, mapt(v, f, check)) for k, v in o.items()])
     else:
         return o
 
@@ -88,7 +90,7 @@ def taint_aware(r, ts=set()):
     return r
 
 
-#--------------------- Decorators -----------------------------------------------
+# ------------------------- Decorators ----------------------------------------
 			
 def untrusted_args(nargs=[], nkwargs=[]):
     '''
@@ -137,9 +139,10 @@ def validator(v, nargs=[], nkwargs=[]):
         def inner(*args, **kwargs):
             r = f(*args, **kwargs)
             if r:
-                tovalid = set([args[n] for n in nargs]) | set([kwargs[n] for n in nkwargs])
+                tovalid = set([args[n] for n in nargs])
+                tovalid.update([kwargs[n] for n in nkwargs])
                 for a in tovalid:
-                    remove_tags(a,v)
+                    remove_tags(a, v)
             return r
         return inner
     return _validator
@@ -168,7 +171,8 @@ def reached(t, v=None):
     filename = inspect.getfile(frame)
     lno = frame.f_lineno
     print "=" * 79
-    print "Violation in line %d from file %s" % (lno, filename) # Localize this message
+    print "Violation in line %d from file %s" % (lno, filename) 
+    # Localize this message
     print "Tainted value: %s" % t
     print '-' * 79
     lineas = inspect.findsource(frame)[0]
@@ -234,17 +238,16 @@ def tainted(o, v=None):
 def taint(o, v=None):
     '''
     Helper function for taint variables.
-    Empty string can't be tainted.
     '''
     ts = set()
     if v:
-         ts.add(v)
+        ts.add(v)
     else:
-         ts.update(TAGS)
+        ts.update(TAGS)
 
-    return taint_aware(o,ts)
+    return taint_aware(o, ts)
 
-# -------------------------- Taint-aware classes -------------------------------------    
+# ------------------------- Taint-aware classes -------------------------------
 def propagate_method(method):
     def inner(self, *args, **kwargs):
         r = method(self, *args, **kwargs)
@@ -257,7 +260,6 @@ def propagate_method(method):
         return taint_aware(r, t)
     return inner
 
-import inspect
 
 def taint_class(klass, methods):
     class tklass(klass):
@@ -269,8 +271,10 @@ def taint_class(klass, methods):
     for name, attr in [(m, d[m]) for m in methods]:
         if inspect.ismethod(attr) or inspect.ismethoddescriptor(attr):
             setattr(tklass, name, propagate_method(attr))
-    if '__add__' in methods and '__radd__' not in methods:   # str has no __radd__ method, it does
-        setattr(tklass, '__radd__', lambda self, other: tklass.__add__(tklass(other), self))
+    # str has no __radd__ method, it does            
+    if '__add__' in methods and '__radd__' not in methods:   
+        setattr(tklass, '__radd__', lambda self, other:
+                                    tklass.__add__(tklass(other), self))
     
     return tklass
 
@@ -279,7 +283,7 @@ dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__',
                      '__init__','__nonzero__', '__reduce__', '__reduce_ex__'])
 
 
-#-------- Taint-aware classes for strings, integers, floats, and unicode --------------- 
+# ------- Taint-aware classes for strings, integers, floats, and unicode ------ 
 
 def attributes(klass):
     a = set(klass.__dict__.keys())
