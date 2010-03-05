@@ -534,11 +534,11 @@ class TestINT(unittest.TestCase):
         self.assertTrue(tainted(a))
         self.assertTrue(tainted(b))        
     
-    def test_float(self):
-        '''If i is a tainted int, float(i) is tainted too.'''
-        i = some_input(1)
-        f = float(i)
-        self.assertTrue(tainted(f))
+    #def test_float(self):
+    #    '''If i is a tainted int, float(i) is tainted too.'''
+    #    i = some_input(1)
+    #    f = float(i)
+    #    self.assertTrue(tainted(f))
         
     def test_floordiv(self):
         i = some_input(1)        
@@ -569,11 +569,11 @@ class TestFLOAT(unittest.TestCase):
         self.assertTrue(tainted(a))
         self.assertTrue(tainted(b))        
     
-    def test_int(self):
-        '''If f is a tainted float, int(f) is tainted too.'''
-        f = some_input(1.0)
-        i = float(f)
-        self.assertTrue(tainted(i))
+    #def test_int(self):
+    #    '''If f is a tainted float, int(f) is tainted too.'''
+    #    f = some_input(1.0)
+    #    i = float(f)
+    #    self.assertTrue(tainted(i))
         
     def test_floordiv(self):
         f = some_input(1.0)        

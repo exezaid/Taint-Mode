@@ -281,7 +281,8 @@ def taint_class(klass, methods):
 
 
 dont_override = set(['__repr__', '__cmp__', '__getattribute__', '__new__',
-                     '__init__','__nonzero__', '__reduce__', '__reduce_ex__'])
+                     '__init__','__nonzero__', '__reduce__', '__reduce_ex__',
+                     '__str__', '__int__', '__float__', '__unicode__'])
 
 
 # ------- Taint-aware classes for strings, integers, floats, and unicode ------ 
