@@ -1,0 +1,2 @@
+from cleaners import clean_osi
+clean_osi = cleaner(OSI)(clean_osi)

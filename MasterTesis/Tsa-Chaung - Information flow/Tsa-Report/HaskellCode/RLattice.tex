@@ -1,0 +1,53 @@
+\begin{Verbatim}[fontsize=\footnotesize,frame=lines,
+                 framesep=5mm, label={[RLattice.hs]RLattice.hs}]
+
+module RLattice where
+
+import Lattice
+
+-- Singleton types for TriLabel
+data SLow = VLow
+  deriving Show
+data SMedium = VMedium
+  deriving Show
+data SHigh = VHigh
+  deriving Show
+
+class STLabel rl l where
+  toLabel :: rl -> l 
+
+instance STLabel SLow TriLabel where
+  toLabel _ = LOW
+instance STLabel SMedium TriLabel where
+  toLabel _ = MEDIUM
+instance STLabel SHigh TriLabel where
+  toLabel _ = HIGH
+
+-- Singleton types for SecType
+data SSecLabel l = VSecLabel l
+  deriving Show
+data SSecRef s l = VSecRef s l
+  deriving Show
+data SSecPair s1 s2 = VSecPair s1 s2
+  deriving Show
+data SSecEither s1 s2 l = VSecEither s1 s2 l
+  deriving Show
+
+class STSecType rs l where
+  toSecType :: rs -> SecType l
+
+instance STLabel rl l => STSecType (SSecLabel rl) l where
+  toSecType _ = SecLabel (Lab (toLabel (undefined::rl)))
+instance (STSecType rs l, STLabel rl l)
+         => STSecType (SSecRef rs rl) l where
+  toSecType _ = SecRef (toSecType (undefined::rs)) (Lab (toLabel (undefined::rl)))
+instance (STSecType rs1 l, STSecType rs2 l) 
+         => STSecType (SSecPair rs1 rs2) l where
+  toSecType _ = SecPair (toSecType (undefined::rs1)) (toSecType (undefined::rs2))
+instance (STSecType rs1 l, STSecType rs2 l, STLabel rl l)
+         => STSecType (SSecEither rs1 rs2 rl) l where
+  toSecType _ = SecEither (toSecType (undefined::rs1)) 
+                          (toSecType (undefined::rs2)) 
+                          (Lab (toLabel (undefined::rl)))
+
+\end{Verbatim}

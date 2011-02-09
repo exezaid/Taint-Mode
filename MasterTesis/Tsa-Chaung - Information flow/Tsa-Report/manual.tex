@@ -1,0 +1,72 @@
+%%
+%% This is file `manual.tex',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% caption.dtx  (with options: `driver')
+%% 
+%% Copyright (C) 1994-2006 Axel Sommerfeldt (caption@sommerfee.de)
+%% 
+%% --------------------------------------------------------------------------
+%% 
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2003/12/01 or later.
+%% 
+%% This work has the LPPL maintenance status "maintained".
+%% 
+%% This Current Maintainer of this work is Axel Sommerfeldt.
+%% 
+%% This work consists of the files caption.ins, caption.dtx,
+%% caption2.dtx, and anleitung.tex and the derived files
+%% caption.sty, caption2.sty, caption3.sty, and manual.tex.
+%% 
+\NeedsTeXFormat{LaTeX2e}[1994/12/01]
+\documentclass{ltxdoc}
+\setlength\parindent{0pt}
+\setlength\parskip{\smallskipamount}
+\newcommand\NEWfeature{\NEW{New feature}}
+\newcommand\NEWdescription{\NEW{New description}}
+\newcommand\NEW[2]{\hskip 1sp \marginpar{\footnotesize\sffamily\raggedleft#1\\#2}}
+\font\manual=manfnt
+\newcommand\DANGER{\hskip 1sp \marginpar{\raggedleft\textcolor{blue}{{\manual\char127}}}}
+\ifx\pdfoutput\undefined\else
+  \ifcase\pdfoutput\else
+    \usepackage{mathptmx,courier}
+    \usepackage[scaled=0.90]{helvet}
+    \addtolength\marginparwidth{15pt}
+  \fi
+\fi
+\usepackage{color,setspace}
+\usepackage{longtable}
+\usepackage{caption}[2005/08/24]
+\DeclareCaptionLabelSeparator{endash}{\space\textendash\space}
+\usepackage{hyperref}
+\DeclareCaptionFont{singlespacing}{\setstretch{1}}
+\DeclareCaptionFont{onehalfspacing}{\onehalfspacing}
+\DeclareCaptionFont{doublespacing}{\doublespacing}
+\DeclareCaptionFont{red}{\color{red}}
+\DeclareCaptionFont{green}{\color{green}}
+\DeclareCaptionFont{blue}{\color{blue}}
+\DeclareCaptionLabelSeparator{period-newline}{. \\}
+\DeclareCaptionStyle{period-newline}[labelsep=period]{labelsep=period-newline}
+\DeclareCaptionStyle{period-newline2}[labelsep=period,justification=centering]{labelsep=period-newline}
+\DeclareCaptionStyle{period-newline3}[labelsep=period]{labelsep=period-newline,justification=centering}
+\DeclareCaptionFormat{reverse}{#3#2#1}
+\DeclareCaptionFormat{llap}{\llap{#1#2}#3\par}
+\DeclareCaptionLabelFormat{fullparens}{(\bothIfFirst{#1}{ }#2)}
+\DeclareCaptionLabelSeparator{fill}{\hfill}
+\DeclareRobustCommand{\KOMAScript}{\textsf{K\kern.05em O\kern.05em%
+    M\kern.05em A\kern.1em-\kern.1em Script}}
+\OnlyDescription
+\begin{document}
+  \DocInput{caption.dtx}
+\end{document}
+\endinput
+%%
+%% End of file `manual.tex'.

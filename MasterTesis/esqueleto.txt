@@ -1,0 +1,22 @@
+Lo establecido con Alejandro en junio 2010
+
+Chap 1: Introduction - from the paper + webdemo
+
+Chap 2: Taint Analysis in general + related works
+
+Chap 3: A library for Taint Analysis in Python
+        API with short examples
+        hardening webdemo
+
+Chap 4: Implementation
+        generation of classe
+        taint aware
+        propagate func
+        propagate method
+
+Chap 5: Limitations - from the paper + '%s', format, alternatives? function safe
+
+Chap 6: Conclusions
+
+Apendix A: References xxxxxxxxx Bibliografia
+Apendix B: library code, example code, tests code

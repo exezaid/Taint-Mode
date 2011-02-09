@@ -1,0 +1,395 @@
+
+%\documentclass[oribibl]{llncs}
+\documentclass{report}
+
+\usepackage{times}
+\usepackage{stmaryrd, latexsym, amsmath, amssymb}
+
+\usepackage{semantic}
+
+\input{declarations}
+
+\newcommand{\arrowop}[1]{$#1\negthickspace #1\negthickspace #1$}
+\newcommand{\co}[1]{$\cod{#1}$}
+
+
+\pagestyle{plain}
+
+\title{Encoding Multithreaded Information Flow in Haskell}
+
+%\institute{
+%Department of Computer Science,
+%Chalmers University of Technology\\
+%412 96 G\"{o}teborg, Sweden
+%}
+
+\author{Ta-chung Tsai}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% INTRODUCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}
+\label{Chap:Introduction}
+
+
+Protecting the confidentiality of data has become an important 
+issue nowadays. Everyday, computer systems processes delicate information in
+order to satisfy users' requests. For instance, credit card numbers,
+email addresses, and other personal information is required to do online
+shopping.
+%Privacy has been an ever important issue in today's society. We enter our 
+%credit card numbers on webs to do on-line shopping. We use our email to
+%subscribe on-line magazines, newsletters, and advertisements which intrigue us.
+%We have detail personal information recorded in bank companies and medical
+%organizations. 
+%Various kinds of computing systems managing tons of
+%data for us alleviate our already busy life a lot, especially in a
+%information explosion age like today. 
+%
+Therefore, it is necessary to guarantee that private data is not
+reveal, intentionally or unintentionally, to unappropriate entities.
+Otherwise, several unpleasant situations could occur, 
+e.g. receiving extra bills in our credit
+card or getting tons of spam in our inbox. 
+%But what happened if a computing 
+%system have some flaws in processing our private data and, unintentionally
+%or intentionally, reveal them to bad guys? We probably receive extra bill from
+%a credit card company, be overwhelmed by spam, or get a strange call during night.
+%An unsafe computing system generally lead to a bigger problem. Would it 
+%be great if we have a mechanism to control data dissemination in
+%a system? It will substantially increase reliability of a system.
+ 
+Some security problems, w.r.t. confidentiality of data, can 
+arise from intentional or unintentional mistakes in programming.
+Consider a bank system where there are two procedures:
+ \emph{fullCCNumber} and \emph{last4CCNumber}, which respectively reveal 
+all and the last four digits of a given credit card. It is then
+possible for a programmer to call \emph{fullCCNumber} instead of 
+\emph{last4CCNumber} by mistake or on purpose. Thus, full credit card numbers would be 
+sent or displayed in places where the last four digits were 
+requited in order to protect credit card clients from frauders.
+%In many cases, security problems regarding improper handling sensitive data 
+%arise from unintentional mistakes of programmers.
+%Consider a salary program of a bank system where there are two procedures, 
+%perProc is for normal personnel to access nonsensitive data, such as personal 
+%salary, and admProc is for manager to access sensitive data, salary of all
+%personnel, for instance. It is possible for a programmer to call the wrong
+%procedure by mistake when improving the code, in which admProc is called 
+%when the user is just a normal staff. If he or she doesn't realize
+%such flaw and update the running program, now all personnel can see the 
+%salary of his or her colleagues.
+%
+% REMOVED!
+%There are also some cases were programmers try to leak information
+%deliberately. 
+%Nowadays computer programs 
+%are usually huge and complex. It is normal that a person who we don't even
+%know writes a small extension and hope us to merge it into our program. 
+%It may require some sensitive data to perform the task. But the problem is
+%how do we know his or her program use these sensitive data properly. He or she
+%could send a copy of these data to somebody who will use them illegally. 
+%On the other hand, examining the code to find the usages of sensitive data
+%manually are too tedious and almost impossible if the extension is big.
+
+The problems above arise from lack of mechanisms to enforce
+confidentiality policies of users. In particular, we would like to
+enforce that information controlled by a confidentiality policy does 
+not flow into locations where that policy is violated. Thus, we are 
+interested in guaranteeing \emph{information-flow}
+policies. As described by Sabelfeld and Myers~\cite{Sabelfeld:Myers:JSAC},
+there has been many conventional security mechanisms used in practical 
+computing system for protecting confidential information. These
+mechanisms include access controls, 
+firewalls, and anti-virus software. Unfortunately, none of them  
+are enough to guarantee information-flow policies. 
+Access control, for instance, allows users with sufficient 
+privilege to acquire secret data, but it does not control how that data is 
+used and propagated through the whole system. 
+
+In the past few decades, researchers have shown that language
+techniques are 
+very useful to guarantee information-flow policies (REF), in
+particular, \emph{non-interference} policies (REF). A
+non-interference policy basically allows manipulation of secret data 
+as long as the visible output of programs are not affected. 
+Programs that satisfy this policy are called non-interferent. 
+Static analysis techniques are useful to guarantee information-flow
+policies, e.g. non-interference, for programs. The reason
+for that is that both, static analysis techniques and information-flow 
+policies, require reasoning on all possible branch executions of
+programs.  At the moment, there are two full-scale language
+implementations: Jif~\cite{jif}, as a variant of Java, and
+FlowCaml~\cite{FlowCaml}, as an extension of Caml. They both adopt
+programming language techniques to specify and enforce 
+information-flow policies.
+
+%In the past few decades, researchers has shown that language techniques are 
+%very useful in information-flow security~\cite{Sabelfeld:Myers:JSAC}. 
+% is discovered to be effective~\cite{Denning:Denning:Certification}
+%because it has similar nature as information-flow security. Both of
+%them are reasoning on all branches of program at the same time, rather than
+%certain execution path of program. The compositional property of 
+%information-flow security makes it suitable to enforce security policy as
+%type checking at compile time. 
+
+Li and Zdancewic~\cite{Li:Zdancewic:CSFW} presents a different
+approach than Jif and FlowCaml. 
+Rather than producing a new language from the scratch, 
+they designed an embedded sub-language in Haskell to 
+guarantee information-flow policies. This sub-language is based on the
+{\em arrows} interface (REF). This approach seems to be promising 
+in order to make information-flow techniques more usable in practise.
+Programmers can write code in the 
+embedded sub-language when some security properties are required,  
+while regular Haskell code can be used for the rest of the program.
+Moreover, many existing applications can be easily upgraded
+to guarantee information-flow policies in comparasion 
+with rewriting whole programs.
+
+%Without information-flow type system directly implemented in compiler
+%of Haskell, static constraints are used to guarantee information-flow policy. 
+%If all the constraints are satisfied, then underlying secure computation is 
+%well-typed according to an information-flow policy.
+%Information-flow constraints are collected and resolved at run-time before 
+%secure computation can execute. This approach has a major advantage.  
+%That is, 
+%programmers can switch between host language and embedded 
+%language easily. They can get most of jobs done in their familiar
+%language and focus on security sensitive part with embedded language.
+%In this way, programmers would be more likely to use information-flow
+%language in practice. 
+%Many existing applications can also be upgraded
+%to guarantee information-flow security with small changes, comparing to 
+%rewriting whole program.
+
+Multithreaded programs are ubiquitous in modern computing systems. 
+For instance, network programming 
+is one of the areas where multithreading is used.
+New threads are often spawned to handle new client's requests. 
+Clients usually access to some share resources placed on the server side. 
+Unfortunately, the presence of shared resources in concurrent settings 
+opens new possibilities for leaking confidential data of programs.  
+Several solutions to that problem have been discussed for different 
+authors (REFS), but it still remains an open challenge. 
+To the best of our knowledge, there are no programming languages that 
+support concurrency and enforce information-flow policies. Thus, 
+it is not surprising that Jif, FlowCaml,
+and Li and Zdancewic's approach have no support for multithreaded programs.
+
+
+\paragraph{Contribution}
+This aim of this work is to provided a Haskell library to allow programmers
+to write multithreaded programs that respect information-flow policies. 
+We extend Li and Zdancewic's work to support 
+data types with more than one security annotation. We 
+also add references and pairs to the sub-language described by 
+the arrow interface. Multithread is introduced in the library by ...
+(WE DON'T KNOW NOW).  Moreover, two full case studies were implemented 
+in order to show the expressiveness and usefulnees of the library. 
+
+
+The rest of this report is organized as follows. BLA BLA BLA 
+%\item Defining a new framework for complex security types
+%\item Developing primitives for reference manipulation in the new framework
+%\item Extending support for information-flow security in multithreaded 
+%programming
+%\item Evaluating expressiveness and usefulness of the library by case study 
+%\end{enumerate}
+%The following sections explain background knowledge
+%necessary to understand rest of the report.
+
+
+\chapter{Information Flow}
+Information-flow problem is about how to keep track of data of different 
+categories flowing in a program and enforce a policy. A policy
+will meet a certain security goal. In confidentiality aspect of
+a computing system, data are categorized by different sensitivity. 
+Some variables may contain higher sensitivity data and thus 
+have higher sensitivity than other variables. A mechanism is required
+to guarantee there is no information leak in a program, which means
+no sensitive data is revealing to a user who has no privilege
+to acknowledge the data. In the rest of the report, we only
+address confidentiality.
+
+\subsection{Noninterference}
+{\it Noninterference} is a security policy to judge if confidentiality
+is preserved in a program. Assume we split input data and variables
+into {\it high} and {\it low}. {\it Noninterference}
+states that {\it low} part of result(or output) should be 
+independent of {\it high} input, and an attacker can only
+look at variables in {\it low} part. That is, when we change any
+{\it high} input, the output which can be observed by an attacker 
+should still be the same.
+
+\subsection{Types of Flow}
+There are generally two types of flow that can leak information. 
+The first type is
+{\it explicit} flow which information is leaked by passing sensitive
+data from a sensitive variable directly to a non-sensitive variable.
+Assume we have two variables, called $\cod{h}$ and $\cod{l}$. 
+$\cod{h}$ contains sensitive data and $\cod{l}$ is non-sensitive
+and can be read by an attacker.
+A simple assignment $\cod{l} := \cod{h}$ will leak information.
+The other way is via {\it implicit} 
+flow~\cite{Denning:Denning:Certification}. Consider the following
+program:
+\begin{align*}
+a_1:~\ifthenelse{\cod{h}~>~0}{\cod{l}~:=~1}{\cod{l}~:=~0}
+\end{align*}
+Now the content of $\cod{l}$ is dependent on the content of $\cod{h}$,
+and an attacker can have information about $\cod{h}$ by looking at
+$\cod{l}$. Program $a_1$ fails
+to comply with {\it noninterference} because if we assign $\cod{h}$ 
+with different values, $\cod{l}$ may have different results.
+
+\subsection{Termination}
+There are two kinds of security specifications related to
+{\it noninterference}, termination-insensitive and
+termination-sensitive. In termination-insensitive,
+{\it noninterference} states if a program runs with two
+different memories that only differ in {\it high} 
+part and both executions terminate, the {\it low} part
+of resulting memories should be identical. Nevertheless, in
+termination-sensitive, {\it noninterference} states that
+if a program runs with two different memories that
+only differ in {\it high} part, then it guarantee
+two cases. If both executions terminate, the {\it low} part
+of resulting memories is identical. Or both executions 
+diverge(infinite loop).
+
+Which security specification is good enough depends on
+the capability of an attacker. If an attacker can only
+observe the result of execution within a program, 
+he will never observe an diverging execution. Thus,
+termination-insensitive is strong enough. But if an
+attacker can observe the result from outside of the
+program, he can judge an execution diverges after
+certain period of time elapsed. Therefore, only
+termination-sensitive is good enough.
+
+\subsection{Information Downgrading}
+In an information-flow secured language, at some point, 
+we may need to release sensitive information on purpose.
+For example, we would like to release the information that if a user
+has entered a correct password. Some kind of declassification
+mechanism is necessary to prevent a situation where information
+is well protected but cannot be used when there is a need. 
+Both~\cite{jif}and~\cite{Li:Zdancewic:CSFW}~has declassification 
+mechanism.
+
+
+\section{Information Flow in Multithreaded Program}
+Share memory plays an essential role in the collaboration of 
+threads in multithreaded programs, but, at the same time, it also
+introduce new information channel. Non-determinism of execution
+order is the source of the problem. Consider the following
+two thread commands:
+\begin{align*}
+b_1:&~(\ifthenelse{\cod{h}~>~0}{\cod{sleep}(120)}{\cod{sleep}(0)});~\cod{l}~:=~1 \\
+b_2:&~\cod{sleep}(60);~\cod{l}~:=~0
+\end{align*}
+where $\cod{h}$ and $\cod{l}$ are a high and a low variable 
+respectively. The content of $\cod{l}$ could be either 1 or 0,
+depending on the execution order of last commands of $b_1$ and $b_2$.
+Assume $\cod{sleep}(n)$ is to execute n consecutive $skip$ commands, and 
+each $skip$ is seen as one step for scheduler. If we have a scheduler 
+reschedules every 80 steps, the program above will leak information
+with a high probability. When $b_1$ is chosen to run first and $\cod{h}$
+is greater than 0, in the middle of $\cod{sleep}(120)$, $b_2$ will be
+scheduled to run and finish within 80 steps and then $b_1$ is scheduled
+again and finish. The content of $\cod{l}$ is 1. But if $\cod{h}$ is less
+than 0, $b_1$ can finish in 80 steps and then $b_2$ runs. In this case,
+$\cod{l}$ would be 0. An attacker can, therefore, deduce the value of $\cod{h}$ 
+by the low result $\cod{l}$ with certain confidence. If an attacker can
+run the program many times, he or she can have a even higher confidence 
+based on statistical results. Notice that both $b_1$ and $b_2$ are secure
+under the notion of {\it noninterference} discussed in the last section.
+As a result, we need new security policies in multithreaded programs.
+
+\subsection{Noninterference in Multithreaded Programs}
+{\em Possibilistic noninterference}, explored by Smith and 
+Volpano~\cite{Smith:Volpano:MultiThreaded}, states that the possible 
+{\it low} outputs of a program is independent of {\it high} inputs. 
+Both $b_1$ and $b_2$ obey the definition because whatever $\cod{h}$ is, 
+the possible results of $\cod{l}$ are \{0,1\}. This notion of 
+noninterference assumes an attacker has no ability to infer information
+from probabilistic results of a program. On the other hand, 
+{\em probabilistic noninterference} has a more stringent 
+restriction~\cite{Volpano:Smith:Probabilistic}. It requires not only the 
+possible appearances but also the probability distribution of {\it low} outputs
+being the same when {\it high} inputs vary. 
+
+\subsection{Existing Approaches}
+Russo and Sabelfeld~\cite{Russo:Sabelfeld:CSFW06} separate threads of 
+different security levels and treat them differently in scheduler 
+to ensure the interleaving of publicly-observable events does not 
+depend on sensitive data. Threads are categorized as high threads 
+and low threads, and are put into different threadpools. The running time 
+of high threads is invisible to low threads. They introduce primitives such 
+as $\cod{hide}$, $\cod{unhide}$, and $\cod{hfork}$ to signal scheduler 
+to move a thread to the corresponding part of a threadpool. This
+approach requires interaction between threads and scheduler.
+
+Volpano and Smith~\cite{Volpano:Smith:Probabilistic} propose a language
+with static threads. They assume an uniform scheduler in which
+each thread has the same probability being chosen in thread pool, and also
+introduce a new primitive $\cod{protect}$ to force a sequence of commands
+executing atomically. They claim if every total command with a guard containing
+a {\it high} variable executes atomically, the program exhibits {\em probabilistic
+noninterference}. But protected commands cannot diverge, otherwise, it will
+freeze all other threads as well. The following is an example of using $\cod{protect}$:
+\begin{align*}
+c_1:&~\cod{protect}(\ifthenelse{\cod{h}~>~0}{\cod{sleep}(120)}{\cod{sleep}(0)});~\cod{l}~:=~1 \\
+c_2:&~\cod{sleep}(60);~\cod{l}~:=~0
+\end{align*}
+Since the if-statement of $c_1$ executed atomically, $c_2$ cannot
+distinguish the timing difference between both branches of the if-statement.
+The probability of the result of $\cod{l}$ is thus independent of $\cod{h}$.
+One problem about $\cod{protect}$ is that its semantic is nonstandard and
+not clear how to be implemented. A strictly uniform scheduler is hard to 
+achieve in practice as well.
+
+Boudol and Castellani~\cite{Castellani:Boudol:TCS02} give a type system which 
+reject programs with low assignments after a high guard command. Since every
+low assignment is not dependent on running time of high value, low outputs 
+will not change as high inputs vary. They have proved {\em possibilistic 
+noninterference} for well-typed programs. However, the following program
+will be rejected:
+\begin{align*}
+d_1:&~(\ifthenelse{\cod{h}~>~0}{\cod{sleep}(120)}{\cod{sleep}(0)});~\cod{l_a}~:=~1 \\
+d_2:&~\cod{sleep}(60);~\cod{l_b}~:=~0
+\end{align*}
+where $l_a$ and $l_b$ are low variables.
+This shows the type system has potential to reject secure and useful programs.
+The approaches mentioned so far deal with {\em internal timing} leaks, which
+assumes an attacker can only judge timing difference by looking at
+low outputs.
+
+Sabelfeld and Sands~\cite{Sabelfeld:Sands:CSFW00} provide a padding
+technique to make both branches of a high guard command have identical
+running time. This approach can deal with {\em external timing}, which 
+assumes an attacker has the power to count exact running time of a 
+program. Nevertheless, it requires underlying operating system 
+and hardware to preserve timing property of each command. Padding techniques
+may also change the efficiency of a program.
+
+Information flow in multithreaded program is still an open question.
+All the researches above gives theoretical results.
+There is no example of multithreaded information-flow language that is implemented 
+by any information-flow security compiler so far.
+
+%\include{Chapters/Introduction}
+\include{Chapters/RelatedWork}
+\include{Chapters/FlowHaskellRef} 
+
+\bibliographystyle{abbrv}
+\bibliography{literature}
+
+\end{document}

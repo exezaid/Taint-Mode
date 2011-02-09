@@ -1,0 +1,171 @@
+
+\section{Encoding information flow in haskell}
+Instead of designing a new language from the scratch, Li and 
+Zdancewic~\cite{Li:Zdancewic:CSFW} showed how to develop an embedded security language 
+in Haskell.\footnote{From now on, we will refer to their work as FlowHaskell.} 
+The approach used by FlowHaskell is considerably light-weighted 
+comparing to Jif~\cite{jif} and FlowCaml~\cite{FlowCaml}, which drastically modify their ancestor 
+compilers to enforce information flow policies. 
+FlowHaskell expresses security levels as a lattice and adopts {\em arrows} as language interface. 
+Constraints,related to information flow policies, are introduced by the {\em arrows} combinators. 
+Those constraints, when satisfied, guarantees that no data of a higher level in lattice flows 
+to a place where data of a lower level is expected, unless that authorized declassifications happened.
+Constraints are generated and collected at the beginning of the execution of programs. 
+Programs perform computations as long as the constraints are satisfied.
+The rest of the section introduces FlowHaskell in more detail.
+
+\subsection{Security lattice}
+\label{chap2:lattice}
+FlowHaskell provides a generic type class $\cod{Lattice}$ for programmers to define security
+labels and their relations. 
+\begin{verbatim}
+class (Eq a) => Lattice a where
+  label_top    :: a
+  label_bottom :: a
+  label_join   :: a -> a -> a
+  label_meet   :: a -> a -> a
+  label_leq    :: a -> a -> Bool
+\end{verbatim}
+Any arbitrary type can be used as a security label if operations in the $\cod{Lattice}$ are
+supported. Programmers can thus defined their own security labels according to their needs.
+
+\subsection{FlowArrow}
+\label{chap2:flowarrow}
+\co{FlowArrow} is an abstract data type implementing arrows interface and used
+as the embedded language in FlowHaskell. The definition is as follows:
+\begin{verbatim}
+data FlowArrow l a b c = FA
+     { computation :: a b c
+     , flow        :: Flow l
+     , constraints :: [Constraint l] }
+
+data Flow l = Trans l l | Flat
+
+data Constraint l = LEQ l l | USERGEQ l
+\end{verbatim}
+Field \co{computation} stores an arrow that takes an input of type \co{b}, and returns a
+value of type \co{c}. 
+Type variable \co{l} represents a security label belonging to type class \co{Lattice}.
+Field \co{flow} keeps track of the security levels of the input and output of the arrow 
+in \co{computation}. 
+Constructor $\cod{Trans}~\cod{l_1}~\cod{l_2}$ denotes a computation that expects a input 
+security label \co{l_1} and gives an output security label \co{l_2}. Constructor
+\co{Flat} denotes a computation where input and output have the same security level.
+Field \co{constraints} contains a list of constraints related to guarantee information
+flow policies when the computation is executed.
+Constraint (\co{LEQ} \co{l_1} \co{l_2}) requires $\cod{l_1}\sqsubseteq\cod{l_2}$ to be satisfied.
+Constraint (\co{USERGEQ} \co{l}) demands that the owner of the computation has
+a greater or equal security label than \co{l}.
+
+\co{FlowArrow} requires underlying computations to be arrows. All security flows and
+constraints are created at the same time that underlying computations are constructed.
+The following is part of the implementation of \co{Arrow} class:
+\begin{verbatim}
+instance (Lattice l, Arrow a) => Arrow (FlowArrow l a) where
+  pure f = FA { computation = pure f
+              , flow = Flat
+              , constraints = [] }
+  (FA c1 f1 t1) >>> (FA c2 f2 t2) =
+      let (f,c) = flow_seq f1 f2 in
+           FA { computation = c1 >>> c2
+              , flow = f
+              , constraints = t1 ++ t2 ++ c }
+  ...
+  (FA c1 f1 t1) &&& (FA c2 f2 t2) = 
+      FA { computation = c1 &&& c2
+         , flow = flow_par f1 f2
+         , constraints = t1++t2 }
+  ...
+
+flow_seq :: Flow l -> Flow l -> (Flow l, [Constraint l])
+flow_seq (Trans l1 l2) (Trans l3 l4) = (Trans l1 l4,[LEQ l2 l3])
+flow_seq Flat f2 = (f2,[])
+flow_seq f1 Flat = (f1,[])
+
+flow_par :: (Lattice l) => Flow l -> Flow l -> Flow l
+flow_par (Trans l1 l2) (Trans l3 l4) = 
+         Trans (label_meet l1 l3) (label_join l2 l4)
+flow_par Flat f2 = f2
+flow_par f1 Flat = f1
+\end{verbatim}
+In FlowHaskell, \co{pure} constructs an arrow with \co{Flat} flow and no constraints.
+Constraints are introduced during combination of arrows. The (\arrowop{>}) combinator,
+for example, requires the output security label of the first arrow to be less than or equal to
+the input security label of the second arrow. See function \co{flow\_seq}.
+Another example is when we compose two arrows in parallel. As showed in
+\co{flow\_par}, the new input label becomes the meet of two input labels, while the new output label is
+the join of two output labels.
+
+\subsection{Tagging Security Label}
+A new Combinator, called \co{tag}, is provided to specify expected security labels. The
+definition is as follows:
+\begin{verbatim}
+tag :: (Lattice l, Arrow a) => l -> FlowArrow l a b b
+tag l = FA { computation = pure (\x->x)
+           , flow = Trans l l
+           , constraints = [] }
+\end{verbatim}
+The flow of \co{tag} is from \co{l} to \co{l}, where \co{l} is provided by the programmers.
+This combinator is used mainly for two reasons. 
+The first reason is to give a definite security label to a value, 
+for instance, a security level to the input of \co{pure}. An example is as follows:
+\begin{verbatim}
+    ... >>> tag HIGH >>> pure (\i -> i+1) >>> ...
+\end{verbatim}
+The \co{pure} becomes an arrow from input label \co{HIGH} to output label \co{HIGH} because the 
+output label of \co{tag} is \co{HIGH}.
+The other reason is to make sure if some place in a program has expected security label. 
+Consider following example:
+\begin{verbatim}
+    pure (\i -> i+1) >>> tag LOW >>> ...
+\end{verbatim}
+The \co{tag} asserts its input label is \co{LOW} and gives \co{LOW} as its output label.
+This eliminates the case where the output label of the \co{pure} is higher than \co{LOW}.
+\subsection{Declassification}
+The declassification mechanism provided by FlowHaskell is similar to the 
+{\em decentralized label model}(DLM)~\cite{Myers:Liskov:TSEM2000}.
+A declassification statement changes security labels which is below the authority of the 
+code to any security labels.
+In other words, each declassificaiton can be seen as a trusted information leak. 
+\begin{verbatim}
+declassify :: (Lattice l, Arrow a) => 
+              l -> l -> FlowArrow l a b b
+declassify l1 l2 =
+    FA { computation = pure (\x->x)
+       , flow = Trans l1 l2
+       , constraints = [USERGEQ l1] }
+\end{verbatim}
+The programmers specify original security label, \co{l_1}, and also declassified security
+label, \co{l_2}. A constraint \co{USERGEQ} is 
+generated to ensure the authority of the code has a greater or equal privilege to \co{l_1}.
+
+\subsection{Policy Enforcement}
+When the programmers construct a \co{FlowArrow} using all the combinators 
+described in previous part of the section, an underlying computation, which performs computation
+to solve problems of the programmers, is constructed at the same time in the field \co{computation}  
+of the \co{FlowArrow}. Meanwhile, a list of constraints related to 
+guarantee information flow policies are generated and collected. To execute the program,
+all constraints have to be satisfied first, and then the underlying computation, which is also 
+an {\em arrow}, is returned from \co{FlowArrow} and can be executed.
+The whole process is enforced in \co{certify}. It is defined as follows:
+\begin{verbatim}
+data Priv l = PR l
+
+certify :: (Lattice l) => l -> l -> Priv l 
+           -> FlowArrow l a b c -> a b c
+certify l_in l_out (PR l_user) (FA c f t) =
+  if not $ check_levels l_in l_out f then
+      error $ "security level mismatch" ++ (show f)
+  else if not $ check_constraints l_user t then
+      error $ "constraints cannot be met" ++ (show t)
+  else c
+\end{verbatim}
+Label \co{l\_in} is the security label of input data to the computation,
+and \co{l\_out} is the security label of output data. 
+If an \co{FlowArrow} has a \co{flow} from \co{l_1} to \co{l_2}, function \co{check\_levels} 
+verifies $\cod{l\_in} \sqsubseteq \cod{l_1}$ and $\cod{l_2} \sqsubseteq \cod{l\_out}$.
+Data type \co{Priv} takes a lattice label and represents privilege of the authority of the
+computation. It is required when checking constraint \co{USERGEQ}.
+Function \co{check\_constraints} verifies if all constraints can be satisfied given the authority
+privilege. If both tests are valid, the underlying computation, \co{c}, is returned.
+

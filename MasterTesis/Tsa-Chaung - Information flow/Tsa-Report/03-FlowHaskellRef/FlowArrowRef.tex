@@ -1,0 +1,351 @@
+
+\section{FlowArrowRef}
+
+% Note
+% explain how it extend from FlowArrow
+% show definition and explain each field
+% type system of FlowArrowRef
+
+To deal with reference, some new types of fields or constraints are required to
+guarantee no information leak due to reference manipulation. For example, a field
+to keep track of side effect is now necessary because reference creation and 
+modification produce side effect. The constraint field of \co{FlowArrow}, 
+described in Sec.~\ref{chap3:flowarrow}, is not sufficient. One solution is to extend new
+fields directly in \co{FlowArrow}, but it breaks integrity of \co{FlowArrow} and
+a lot of related operators and help functions have to be redefined. 
+As a new embedded language interface, \co{FlowArrowRef} extends \co{FlowArrow} in 
+a modular way, in which \co{FlowArrow} becomes a field of \co{FlowArrowRef} and 
+other necessary fields due to reference manipulation are added in \co{FlowArrowRef}. 
+This makes old functions of \co{FlowArrow} can be reused and provides a better 
+abstraction for related functions of \co{FlowArrowRef} to concentrate on handling
+new constraints.
+
+\subsection{Conceptual Abstract Data Type}
+\label{chap3:flowarrowref:concept}
+The definition of \co{FlowArrowRef} is as below:
+\begin{verbatim}
+data FlowArrowRef l a b c = 
+     FARef { flowarrow :: FlowArrow l a b c
+           , pc :: l
+           , constraintsRef :: [Constraint (SecType l)]
+           , gconstraintsRef :: [GConstraint SecType l]
+           }
+
+data Constraint l = LEQ l l | USERGEQ l | IS l l 
+
+data GConstraint a l = GUARD l (a l) | GLEQ (a l) l
+\end{verbatim}
+\co{FlowArrowRef} has four type parameters. Type variable \co{l} is a lattice label,
+variable \co{a} is an arrow which performs desired computation, and variables \co{b} 
+and \co{c} are types
+of input and output respectively. Field \co{flowarrow} is of type \co{FlowArrow} that
+handles all flows and constraints irrelevant to reference manipulation. Field \co{pc} 
+is a lattice label tracking lowest label of side effects in a computation. Field 
+\co{constraintsRef} and \co{gconstraintsRef} are new constraints required. Although
+field \co{constraintsRef} is the same type as field \co{constraints} in \co{FlowArrow},
+they are separated for modularity. A new constructor of \co{Constraint},
+\co{IS~l_1~l_2}, assures \co{l_1} has an identical structure to \co{l_2}. Data type 
+\co{GConstraint} is a set of constraints that compare a lattice label and flow
+security label of a \co{SecType}. It differs from \co{Constraint} which involves
+two \co{SecType}s.
+
+Notice this is not the final definition of \co{FlowArrowRef}. Because of the introduction
+of complex security type, complex security labels are required to be passed and remembered 
+precisely through computation. Mechanisms in original \co{FlowArrow} is insufficient that 
+only a lattice label is used for security label of any data type. Therefore, unification 
+is adopted to resolve the limitation. All unification related designs are explained later in 
+Sec.~\ref{chap3:unification}.
+Only conceptual framework of \co{FlowArrowRef} is illustrated here.
+
+\subsection{Type System}
+\label{chap3:flowarrowref:typesystem}
+
+
+\begin{figure*}[t]
+  \[\begin{array}{c}
+    \inference[$\mathit{PURE}$]{f~:~\typn{1}~->~\typn{2}}
+                               {\top,\emptyset,\emptyset\proves \cod{pure}~f~:~
+                                \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\mathbf{high}}} \\ \\
+
+    \inference[$\mathit{SEQ}$]{pc_1,\Delta_1,\Theta_1\proves f_1~:~\res{\typn{1}}{\sts{1}}~->~\res{\typn{x}}{\sts{2}}\quad 
+                    pc_2,\Delta_2,\Theta_2\proves f_2~:~\res{\typn{x}}{\sts{3}}~->~\res{\typn{4}}{\sts{4}}}
+                   {pc_1\sqcap pc_2,\Delta_1\cup \Delta_2,\Theta_1\cup \Theta_2\cup \{\sts{2}\sqsubseteq \sts{3}\}
+                    \proves f_1~>\negthickspace>\negthickspace>~f_2~:~
+                    \res{\typn{1}}{\sts{1}}~->~\res{\typn{4}}{\sts{4}}} \\ \\
+
+
+    \inference[$\mathit{FIRST}$]{pc,\Delta,\Theta\proves f~:~(\typn{1},\sts{1})~->~(\typn{2},\sts{2})}
+                     {pc,\Delta,\Theta\proves \cod{first}~f~:~
+                      \res{(\typn{1},\typn{3})}{(\sts{1},\sts{3})}~->~
+                      \res{(\typn{2},\typn{4})}{(\sts{2},\sts{4})}} \\ \\
+    
+    \inference[$\mathit{SECOND}$]{pc,\Delta,\Theta\proves f~:~(\typn{1},\sts{1})~->~(\typn{2},\sts{2})}
+                      {pc,\Delta,\Theta\proves \cod{second}~f~:~
+                       \res{(\typn{3},\typn{1})}{(\sts{3},\sts{1})}~->~
+                       \res{(\typn{3},\typn{2})}{(\sts{3},\sts{2})}} \\ \\
+
+    \inference[$\mathit{PAR1}$]{pc_1,\Delta_1,\Theta_1\proves f_1~:~
+                         \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}}\quad 
+                         pc_2,\Delta_2,\Theta_2\proves f_2~:~
+                         \res{\typn{3}}{\sts{3}}~->~\res{\typn{3}}{\sts{4}}}
+                        {pc_1\sqcap pc_2,\Delta_1\cup \Delta_2,\Theta_1\cup \Theta_2
+                         \proves f_1~*\negthickspace*\negthickspace*~f_2~:~
+                         \res{(\typn{1},\typn{3})}{(\sts{1},\sts{3})}~->~
+                         \res{(\typn{2},\typn{4})}{(\sts{2},\sts{4})}} \\ \\
+
+    \inference[$\mathit{PAR2}$]{pc_1,\Delta_1,\Theta_1\proves f_1~:~
+                        \res{\typn{x}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}}\quad 
+                        pc_2,\Delta_2,\Theta_2\proves f_2~:~
+                        \res{\typn{x}}{\sts{3}}~->~\res{\typn{4}}{\sts{4}}}
+                       {pc_1\sqcap pc_2,\Delta_1\cup \Delta_2,\Theta_1\cup \Theta_2
+                        \proves f_1~\arrowop{\&}~f_2~:~
+                        \res{\typn{x}}{(\sts{1}\sqcap \sts{3})}~->~
+                        \res{(\typn{2},\typn{4})}{(\sts{2},\sts{4})} } \\ \\
+    \end{array}
+   \]
+\caption{Type system of methods in type class \co{Arrow}}
+\label{fig:flowarrowref:typesystem0}
+\end{figure*}
+
+\begin{figure*}[t]
+\[ \begin{array}{c}
+    \inference[$\mathit{LEFT}$]{pc,\Delta,\Theta\proves f~:~
+                     \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}}}
+                     {pc,\Delta,\Theta\proves \cod{left}~f~:~
+                     \res{either\ \typn{1}\ \typn{3}}{(\mathbf{either}\ \sts{1}\ \sts{3})^\ell}~->~
+                     \res{either\ \typn{2}\ \typn{3}}{(\mathbf{either}\ \sts{2}\ \sts{3})^\ell}} \\ \\
+
+    \inference[$\mathit{RIGHT}$]{pc,\Delta,\Theta\proves f~:~
+                     \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}}}
+                     {pc,\Delta,\Theta\proves \cod{right}~f~:~
+                     \res{either\ \typn{3}\ \typn{1}}{(\mathbf{either}\ \sts{3}\ \sts{1})^\ell}~->~
+                     \res{either\ \typn{3}\ \typn{2}}{(\mathbf{either}\ \sts{3}\ \sts{2})^\ell}} \\ \\
+
+    \inference[$\mathit{CHOICE1}$]{pc_1,\Delta_1,\Theta_1\proves f_1~:~
+                       \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}} \quad 
+                       pc_2,\Delta_2,\Theta_2\proves f_2~:~
+                       \res{\typn{3}}{\sts{3}}~->~\res{\typn{4}}{\sts{4}}}
+                       {pc_1\sqcap pc_2,\Delta_1\cup \Delta_2\cup constraint1
+                       , \Theta_1\cup \Theta_2
+                       \proves  f_1~\arrowop{+}~f_2~:~flow1 }\\ \\
+
+    flow1~=~\res{either\ \typn{1}\ \typn{3}}{(\mathbf{either}\ \sts{1}\ \sts{3})^\ell}~->~
+            \res{either\ \typn{2}\ \typn{4}}{(\mathbf{either}\ \sts{2}\ \sts{4})^\ell} \\ \\
+
+    constraint1 = \{(\mathbf{either} \sts{1}\ \sts{3})^\ell\sleql (pc_1\sqcap pc_2),
+                   (\mathbf{either}\ \sts{1}\ \sts{3})^\ell\sleql \ell \} \\ \\
+
+    \inference[$\mathit{CHOICE2}$]{pc_1,\Delta_1,\Theta_1\proves f_1~:~
+                         \res{\typn{1}}{\sts{1}}~->~\res{\typn{x}}{\sts{2}} \quad 
+                         pc_2,\Delta_2,\Theta_2\proves f_2~:~
+                         \res{\typn{3}}{\sts{4}}~->~\res{\typn{x}}{\sts{4}}} 
+                         {pc_1\sqcap pc_2,\Delta_1\cup \Delta_2\cup constraint2
+                         , \Theta_1\cup \Theta_2
+                         \proves f_1~|||~f_2~:~flow2} \\ \\
+
+    flow2~=~\res{either\ \typn{1}\ \typn{3}}{(\mathbf{either}\ \sts{1}\ \sts{3})^\ell}~->~
+            \res{\typn{x}}{(\sts{2}\sqcup \sts{4})} \\ \\
+
+    constraint2 = \{(\mathbf{either} \sts{1}\ \sts{3})^\ell\sleql (pc_1\sqcap pc_2),
+                   (\mathbf{either}\ \sts{1}\ \sts{3})^\ell\sleql e(\sts{2}\sqcup \sts{4}),  
+                   \ell\guard \sts{1}, \ell\guard \sts{3} \} \\ \\
+%    \inference[$\mathit{LOOP}$]{pc,\Delta,\Theta\proves f~:~(\tau_1^s,\tau_2^s)^l~->~(\tau_3^s,\tau_4^s)^{l'}}
+%                    {pc,\Delta\cup \{l\lhd\ \tau_1^s, l'\lhd\ \tau_3^s\},
+%                     \Theta\cup \{\tau_4^s\sqsubseteq \tau_2^s\}\proves \cod{loop}\ f~:~\tau_1^s~->~\tau_3^s} \\ \\
+%
+    \end{array}
+  \]
+\caption{Type system of methods in type class \co{ArrowChoice}}
+\label{fig:flowarrowref:typesystem1}
+\end{figure*}
+
+\begin{figure}[t]
+\[
+  \begin{array}{c}
+    \inference[$\mathit{TAG}$]{}
+                   {\top,\emptyset,\emptyset \proves \cod{tagRef}\ \ell~:~
+                    \res{\typ}{\st}~->~\res{\typ}{\tagup (\st,\ell)}} \\ \\
+
+    \inference[$\mathit{DECL}$]{}
+                    {\top,\emptyset,\{\st\sqsubseteq \cod{user}\}\proves 
+                     \cod{declassifyRef}~\ell~:~
+                     \res{\typ}{\st}~->~\res{\typ}{\decl (\st,\rho(\typ,\ell),\ell)}}  \\ \\
+
+    \inference[$\mathit{LOWER}$]{\top,\Delta,\Theta\proves f~:~
+                    \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}}}
+                    {\top,\{\ell\lleqs \sts{1}\} ,\emptyset\proves \cod{lowerA}~\ell~f~:~
+                    \res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\rho(\typn{2},\ell)}} \\
+  \end{array}
+\]
+\caption{Type system of new arrow combinators}
+\label{fig:flowarrowref:typesystem2}
+\end{figure}
+
+\begin{figure*}[t]
+ \[
+   \begin{array}{c}
+   \inference[Certify]{pc,\Delta,\Theta\proves f~:~\res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}} \quad 
+                       \sts{in}\sleql pc\quad
+                       \sts{in}\sqsubseteq \sts{1} \\ \sts{2}\sqsubseteq \sts{out} \quad
+                       L\proves \Delta \quad L\proves \Theta[\ell_u/\cod{user}]}
+                      {L,\ell_u\proves \cod{certifyRef}~f~:~\res{\typn{1}}{\sts{in}}~->~\res{\typn{2}}{\sts{out}}}  \\ 
+   \end{array}
+ \]
+\caption{Type system of certify}\label{fig:flowarrowref:certify}
+\end{figure*}
+
+\begin{figure}[t]
+\[
+  \begin{array}{c}
+  \inference[]{\ell'\sqsubseteq \ell}{\ell'\sleql \ell} \quad
+  \inference[]{\ell'\sqsubseteq \ell\quad \st\sleql \ell}{\st\ \mathbf{ref}^{\ell'}\sleql \ell} \quad
+  \inference[]{\sts{1}\sleql \ell \quad \sts{2}\sleql \ell}{(\sts{1},\sts{2})\sleql \ell} \\ \\
+  \inference[]{\ell'\sqsubseteq \ell\quad \sts{1}\sleql \ell \quad \sts{2}\sleql \ell}
+              {(\mathbf{either}~\sts{1}~\sts{2})^{\ell'}\sleql \ell} \quad
+  \inference[]{\top\sqsubseteq \ell}{\mathbf{high}\sleql \ell} \\
+  \end{array}
+\]
+\caption{Constraint $\sleql$}
+\label{fig:flowarrowref:sleql}
+\end{figure}
+
+\begin{figure}[t]
+\[
+  \begin{array}{c}
+  \inference[]{\ell\sqsubseteq \ell'}{\ell\lleqs \ell'} \quad
+  \inference[]{\ell\sqsubseteq \ell' \quad \ell\lleqs \st}{\ell \lleqs \st\ \mathbf{ref}^{\ell'}} \quad
+  \inference[]{\ell\lleqs \sts{1} \quad \ell\lleqs \sts{2}}{\ell\lleqs (\sts{1},\sts{2})} \\ \\
+  \inference[]{\ell\sqsubseteq \ell' \quad \ell\lleqs \sts{1} \quad \ell\lleqs \sts{2}}
+              {\ell\lleqs (\mathbf{either}~\sts{1}~\sts{2})^{\ell'}} \quad
+  \inference[]{\ell\sqsubseteq \top}{\ell\lleqs \mathbf{high}}
+  \end{array}
+\]
+\caption{Constraint $\lleqs$}
+\label{fig:flowarrowref:lleqs}
+\end{figure}
+
+\begin{figure}[t]
+\[
+   \inference[]{\ell\sqsubseteq e(\st)}{\ell\guard \st}
+\]
+\caption{Constraint $\guard$}
+\label{fig:flowarrowref:guard}
+\end{figure}
+
+\begin{figure}[t]
+ \[
+  \begin{array}{c}
+  \inference[]{}{\rho(int,\ell)~->~\ell} \quad
+  \inference[]{\rho(\typ,\ell)~->~\sts{1}}
+              {\rho(\typ~ref,\ell)~->~\sts{1}~\mathbf{ref}^{\ell}} \\ \\
+  \inference[]{\rho(\typn{1},\ell)~->~\sts{1} \quad \rho(\typn{2},\ell)~->~\sts{2}}
+              {\rho((\typn{1},\typn{2}),\ell)~->~(\sts{1},\sts{2})} \quad
+  \inference[]{\rho(\typn{1},\ell)~->~\sts{1} \quad \rho(\typn{2},\ell)~->~\sts{2}}
+              {\rho(either~\typn{1}~\typn{2},\ell)~->~(\mathbf{either}~\sts{1}~\sts{2})^{\ell}} \\
+  \end{array}
+ \]
+\caption{Function $\rho$}
+\label{fig:deduce}
+\end{figure}
+
+The type system conceptually implemented by \co{FlowArrowRef} is depicted in 
+Figure~\ref{fig:flowarrowref:typesystem0}, Figure~\ref{fig:flowarrowref:typesystem1},
+and Figure~\ref{fig:flowarrowref:typesystem2}.
+The type judgement has following form:
+\[
+pc,\Delta,\Theta\proves f~:~\res{\typn{1}}{\sts{1}}~->~\res{\typn{2}}{\sts{2}}
+\]
+where $pc$ is lower bound of side effects in computation \co{f}, 
+$\Delta$ denotes guard constraints as \co{GConstraint} in \co{FlowArrowRef}.
+Environment $\Theta$ represents constraints of \co{Constraint} that appear both in
+\co{FlowArrow} and \co{FlowArrowRef}. The input and output types of \co{f} are
+$\typn{1}$ and $\typn{2}$, while the input and output security labels
+are $\sts{1}$ and $\sts{2}$, respectively.
+
+Combinator \co{pure} lifts a Haskell function into \co{FlowArrowRef}. It takes any
+input security label $\sts{1}$ and returns $\mathbf{high}$
+as the output security label. 
+No information leaks in \co{pure} because everything
+becomes top secret afterward. The reason of this design choice are explained 
+in Sec.~\ref{chap3:pure}. Rule (\co{SEQ}) ensures output security label
+of the first computation is less than or equal to input security label of the second computation via
+constraint $\sqsubseteq$. The new $pc$ is the meet of the $pc$s of two underlying computations 
+and records the lower bound of side effects in both computations. The new constraints are the
+union of the original constraints in both computations. The definition of $pc$ and constraints 
+are the same for rules involving two computations.
+In rule (\co{FIRST}), (\co{SECOND}), and (\co{PAR1}), both input and output types and security labels
+are wrapped in a pair constructor.
+In rule (\co{Par2}), both underlying computations should have the same input type. The final
+input security label becomes the meet of two input security labels.
+
+In Figure~\ref{fig:flowarrowref:typesystem1}, rule (\co{LEFT}) and (\co{RIGHT}) wrap input and output
+types and security labels in either constructors. The security label for the identity of an either
+type keeps the same from input to output.
+In rule (\co{CHOICE1}), two constraints are generated. Constraint $\sleql$ is defined in 
+Figure~\ref{fig:flowarrowref:sleql}.
+The first constraint $(\mathbf{either} \sts{1}\ \sts{3})^\ell\sleql (pc_1\sqcap pc_2)$
+says the security label of the lowest side effect in two underlying computations should be 
+above or equal to any security label annotations of inputs. This prevents the case illustarted
+in the following pseudocode:
+\begin{verbatim}
+ pure (\x -> if x>0 then (Left x) else (Right x)) >>>
+ ((l := 1) +++ (l := 0))
+\end{verbatim}
+Assignment to $l$ is like writing reference $l$, which is explained in 
+Sec.~\ref{chap4:reference}. Assume $l$ is a low reference, the side effect of the writes are also
+low. However, the input of (\arrowop{+}) from the result of \co{pure} is $\top$ and information is 
+leaked in the content of reference $l$.
+The second constraint $(\mathbf{either}\ \sts{1}\ \sts{3})^\ell\sleql \ell$ demands the output
+security label is above or equal to any input security label annotations. The identity label of 
+$\mathbf{either}$, $\ell$, is sufficient because the security labels of the contents should be 
+at least the same or above the identity security label when extracted from the constructors.
+A counter example that is simple and conveys the same idea is given in the explaination of 
+rule (\co{CHOICE2}).
+
+In rule (\co{CHOICE2}), there four constraints created. The first is the smae and has already been 
+explained in rule (\co{CHOICE1}). The second constraint 
+$(\mathbf{either}\ \sts{1}\ \sts{3})^\ell\sleql e(\sts{2}\sqcup \sts{4})$
+requires the security label representing the security context of outputs is above or equal to
+all security label annotations of the inputs. Operator $e$ is defined in Figure~\ref{fig:extract}.
+The following program illustrates the necessity of this constraint.
+\begin{verbatim}
+ pure (\_ -> 0) >>>
+ pure (\x -> if x > 10 then (Left x) else (Right x)) >>>
+      ((lowerA LOW (pure(\_ -> 1))) 
+       ||| 
+       (lowerA LOW (pure (\_-> 0))))
+\end{verbatim}
+Assume we have two labels in the lattice, \co{LOW} and \co{HIGH}.
+Combinator \co{lowerA} in the program above produces output security labels with each label 
+annotation being \co{LOW}(see Sec.~\ref{chap3:lower} for detail information of \co{lowerA}).
+The output of \co{pure}, nevertheless, is of security type $\mathbf{high}$.
+The attackers thus have information of \co{HIGH} variable \co{x} by observing \co{LOW} outputs.
+The remaining two constraints $\ell\guard \sts{1}$ and $\ell\guard \sts{3}$ are required because
+combinator ($|||$) takes the contents out of either constructors to perform computations. 
+They guarantees the security label of the contents is equal to or above the security level of
+the program context, which is $\ell$.
+The constraint $\guard$ is defined in Figure~\ref{fig:flowarrowref:guard}. 
+
+Figure~\ref{fig:flowarrowref:typesystem2} shows the type system of new combinators that are not
+in standard {\em arrow} interface. Combinator \co{tagRef} takes a lattice label, $\ell$, and produces an output
+with security label which has the same constructors as the input security label but with each label annotation 
+higher or equal to $\ell$. This is implemented by function $\tagup$, as defined in Figure~\ref{fig:tagup}.
+Combinator \co{declassifyRef} takes a lattice label, $\ell$, and declassifies the input security label. 
+Each label annotation in the input security label which is higher than $\ell$ is downgraded to $\ell$.
+This is done by function $\decl$ in Figure~\ref{fig:decl}. A constraint $\st\sqsubseteq \cod{user}$
+quarantees the authority of the code, denoted by \co{user}, is equal or higher than the input
+security label to perform the declassification. 
+Combinator \co{lowerA} takes a lattice label
+and a \co{FlowArrowRef}, and transform the output security label of the computation based on the output
+type. Operator $\rho$, defined in Figure~\ref{fig:deduce}, generates a security label with every label 
+annotation being $\ell$. A constraint $\ell\lleqs \sts{1}$ requires all the label annotations in the 
+input security label are higher or equal to the given security label, $\ell$. Constraint $\lleqs$ is
+defined in Figure~\ref{fig:flowarrowref:lleqs}.
+The detail information of combinator \co{lowerA} is explained in Sec.~\ref{chap3:lower}.
+
+The type system for \co{certifyRef} is described in Figure~\ref{fig:flowarrowref:certify}. Type judgement
+$L,\ell_u\proves f~:~\res{\typn{1}}{\sts{in}}~->~\res{\typn{2}}{\sts{out}}$ says given a lattice $L$ and 
+an authority privilege label $\ell_u$, computation $f$ takes an input of type $\typn{1}$ with security 
+label $\sts{in}$, and returns an output of type $\typn{2}$ with security label $\sts{out}$.
+Computation $f$ is well-typed if all the constraints in the premise are satisfied.
+

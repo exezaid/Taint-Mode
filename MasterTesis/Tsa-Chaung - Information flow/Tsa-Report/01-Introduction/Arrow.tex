@@ -1,0 +1,70 @@
+
+\section{The Arrows Interface}
+Arrows is proposed by Hughes~\cite{Hughes:SCP00} to represent a set of computations. 
+It has similar purposes to monads as a common interface for libraries.
+Comparing to monads, arrows have input type parameterised and have the ability to 
+choose computations based on static information. There
+are many type classes in arrows and each type class provides a different functionality.
+The following introduces several type classes that will be used in the report.
+The fundamental type class is $\cod{Arrow}$:
+\begin{verbatim}
+class Arrow a where
+  pure :: (b -> c) -> a b c
+  (>>>) :: a b c -> a c d -> a b d
+  first :: a b c -> a (b, d) (c, d)
+  second :: a b c -> a (d, b) (d, c)
+  (***) :: a b c -> a b' c' -> a (b, b') (c, c')
+  (&&&) :: a b c -> a b c' -> a b (c, c')
+\end{verbatim}
+where $\cod{a}$ is an abstract data type for arrows ,and $\cod{b}$ and $\cod{c}$ are types
+of input and output respectively. Operator $\cod{pure}$ lifts a function of type 
+($\cod{b}->\cod{c}$) into an arrow. Infix operator \arrowop{>} composes two arrows in
+sequence where output type of first arrow should be identical to input type of second arrow.
+Operator $\cod{first}$ composes an arrow parallel with an identity arrow, pure id. These three
+operators are minimum to define an $\cod{Arrow}$ instance and the remaining operators have 
+default definition based on the three. Notice that some arrows need to implement all operators
+because the intended meanings are different from default. Operation $\cod{second}$
+has an opposite effect of parallel composition to $\cod{first}$. Operator \arrowop{*} parallel
+composes two arbitrary arrows, and \arrowop{\&} duplicates the input and feed them to both arrows.
+
+The basic $\cod{Arrow}$ type class does not support conditional computations. Type class
+$\cod{ArrowChoice}$ provide such ability via $\cod{Either}$ type in Haskell.
+\begin{verbatim}
+data Either a b = Left a | Right b
+
+class Arrow a => ArrowChoice a where
+  left :: a b c -> a (Either b d) (Either c d)
+  right :: a b c -> a (Either d b) (Either d c)
+  (+++) :: a b c -> a b' c' -> a (Either b b') (Either c c')
+  (|||) :: a b d -> a c d -> a (Either b c) d
+\end{verbatim}
+Operator $\cod{left}$ transforms an arrow to support conditional computations based on 
+type constructor of $\cod{Either}$. If input is of constructor $\cod{Left}$, value inside 
+$\cod{Left}$ will be fed to arrow in $\cod{left}$. Otherwise, input will pass through as 
+output. Other operators have default definitions based on $\cod{left}$. 
+Combinator $\cod{right}$ feeds input to the arrow inside if the input is
+of constructor $\cod{Right}$. Similarly, \arrowop{+} and $|||$ feed input to one of
+arrows depending on the type constructor of input.
+
+Another useful type class is $\cod{ArrowLoop}$ which provides the ability to define 
+computation with feedback.
+\begin{verbatim}
+class Arrow a => ArrowLoop a where
+  loop :: a (b,d) (c,d) -> a b c
+\end{verbatim}
+Combinator $\cod{loop}$ takes part of output, which is type of $\cod{d}$, and feed it 
+as part of input. The whole computation only done once.
+% Should we have a figure showing ArrowLoop computation?
+% Should I give examples of using arrow interface?
+
+Due to the structure of {\em arrows}, a point-free style of programming is natural and 
+straightforward. But in some cases, it is a little bit tedious to use point-free style.
+One instance is when a lot of intermediate values are required, we need to use nested
+parallel combinator, such as \arrowop{\&}, to pass them along
+computation. Paterson~\cite{Paterson:ICFP01} proposed a $\cod{do}$-like notation for arrows.
+Programmers write pointed program in arrow notations, and compilers transform them to 
+primitive arrow combinators before compiling.
+
+Both~\cite{Hughes:ISSAFP05} and~\cite{Paterson:TFP03} are good tutorials for further 
+study of arrows.
+

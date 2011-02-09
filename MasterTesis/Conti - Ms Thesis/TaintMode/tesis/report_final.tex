@@ -1,0 +1,288 @@
+%\documentclass[oribibl]{llncs}
+\documentclass[a4paper]{report}
+\usepackage{wrapfig}
+\usepackage{times}
+\usepackage{stmaryrd, latexsym, amsmath, amssymb, wasysym}
+\usepackage{fancyvrb}
+\usepackage[Lenny]{fncychap}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{semantic}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{graphicx}
+\newcommand{\nametklass}{taint-aware }
+\newcommand{\nameTklass}{Taint-aware }
+\newcommand{\namefunc}{taint-aware }
+\newcommand{\suggestions}{Suggestions for lunch \texttrademark }
+
+\newcommand{\arrowop}[1]{$#1\negthickspace #1\negthickspace #1$}
+\newcommand{\co}[1]{$\cod{#1}$}
+% security type with index
+\newcommand{\sts}[1]{s_{#1}^l}
+% security type without index
+\newcommand{\st}{s^l}
+% symbol of constraint IS
+\newcommand{\is}{\sim}
+% symbol of gconstraint
+\newcommand{\guard}{\lhd}
+\newcommand{\sleql}{\LHD}
+\newcommand{\lleqs}{\preceq}
+% tag constraint
+\newcommand{\tagup}{\uparrow}
+% declassification constraint
+\newcommand{\decl}{\downarrow}
+% lifting function
+\newcommand{\lift}{\nearrow}
+% basic type without index
+\newcommand{\typ}{\tau}
+% basic type with index
+\newcommand{\typn}[1]{\tau_{#1}}
+% result of type system
+\newcommand{\res}[2]{{#1}\mid {#2}}
+
+
+%\newenvironment{code}{\begin{Verbatim}[fontsize=\footnotesize]}{\end{Verbatim}}
+
+\pagestyle{plain}
+
+\title{A library for Taint Analysis in Python: discussions and implementation}
+
+\newcommand{\myTitle}{A library for Taint Analysis in Python: discussions and implementation}
+\newcommand{\mySubtitle}{}
+\newcommand{\myAuthor}{Ing. Juan Jos\'{e} Conti}
+%\institute{
+%Department of Computer Science,
+%Chalmers University of Technology\\
+%412 96 G\"{o}teborg, Sweden
+%}
+
+\author{Juan Jos\'{e} Conti}
+
+\begin{document}
+
+\pagestyle{plain}
+\pagenumbering{roman}
+
+%\maketitle
+\thispagestyle{empty}
+
+\clearpage
+\par\vskip 2cm
+\begin{center}
+{\Huge\bf \myTitle                                         %PERSONALIZE
+\vskip 1cm \Large \mySubtitle                              }           %PERSONALIZE
+\par\vspace {6cm}
+{\large Graduate Thesis }
+\par\vspace {1cm}
+{\large ????????????????????\\
+%at \\
+UTN  }
+\par \vspace{1cm}
+{\large September 2010  }            %PERSONALIZE
+\par\vspace {1cm} {\large by}
+\par \vspace {1cm}
+{\Large \myAuthor            }                                  %PERSONALIZE
+\par\vspace {1cm}
+{\large Santa Fe, Argentina}                 %PERSONALIZE
+\end{center}
+
+\clearpage
+
+\thispagestyle{empty}
+\noindent
+Supervisor: Dr. Alejandro Russo \\
+Department of Computer Science and Engineering \\
+Chalmers University of Technology \\
+SE - 412 96 G\"{o}teborg, Sweden \\
+
+\noindent
+Co-supervisor: Ms. Susana Romaniz\\
+Facultad Regional Santa Fe \\
+Universidad Tecnol\'{o}gica Nacional \\
+Argentina\\
+
+\vfill\noindent
+Copyright \copyright\ 2010 by \myAuthor \\
+E-mail: jjconti@frsf.utn.edu.ar
+
+\clearpage
+
+\tableofcontents
+
+\listoffigures
+\addcontentsline{toc}{chapter}{List of Figures}
+
+\listoftables
+\addcontentsline{toc}{chapter}{List of Tables}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+
+Vulnerabilities in web applications present threats to on-line systems.
+SQL injection and cross-site scripting attacks are among the
+most common threats found nowadays. These attacks are
+often result of improper or none input validation. 
+To help discover such vulnerabilities, 
+popular web scripting 
+languages like Perl, Ruby, PHP, 
+and Python perform taint analysis.
+The analysis is usually implemented using an static (e.g. type
+systems) or dynamic (e.g. execution monitors) techniques. 
+In the latter case, the Perl, Ruby, PHP, and Python interpreters have
+been adapted to provide a taint mode. 
+However, modifying interpreters might be a major task in its own
+right. In fact, it is very probably that  
+new releases of interpreters require to 
+be adapted to provide a taint mode.
+Differently from previous approaches, 
+we show how to provide taint analysis for Python via a library
+ written entirely in Python, and thus avoiding modifications in the interpreter.
+The concepts of classes, decorators and dynamic dispatch
+makes our solution lightweight, easy to use, and particularly neat.
+With minimal or none effort, the library can be adapted
+to work with different Python interpreters.
+
+
+
+\chapter*{Acknowledgement}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+
+This work wouldn't be possible without kindly support from many people.
+
+First of all, I would like to express my immense gratitude to my dear supervisor, 
+Dr. John Hughes, who has suggested me such an exciting topic, has provided me brilliant ideas
+when I met difficulties, and has given me insightful advice as well as zealous encouragement.
+I cannot overstate my grateful to Alejandro Russo. This work wouldn't look like it is today
+without his clever ideas, enthusiastic discussions, and helpful comments.
+Every meeting with them is informative and enjoyable for me.  
+I learn a lot not only from their professional expertise but also from their optimistic personalities
+when facing problems.
+Working with them is definitely an unforgettable experience in my life.
+
+I would like to thank Dr. David Sands, Dr. Andrei Sabelfeld, Aslan Askarov, and people in the Multi
+Group at Department of Computer Science and Engineering for providing useful comments on many 
+parts of this work. I also like to thank B\"{o}rje Johansson for helping me facilitate the 
+whole process.
+
+I want to dedicate this work to my dearest family: my grand mother, Cho-she Tsai, who always fully supports
+me since I was a child, my father, Cheng-chih Tsai, and my mother, Li-ching Chao, who encourage me
+to pursue my dream and support me with infinite love, and my brother, Yu-chung Tsai, with whom I learn, play, 
+and grow. I am also grateful to my lovely relatives whose constantly care and greetings make me
+feel warm even in the cold winter of Sweden.
+
+I cannot continue without thanking a group of extraordinary friends. They are Li-ting Chao, 
+Chien-chih Chen, Chien-huei Chen, Fei-neng Chuang, Yu-ting Liao, Yueh-ting Liao as well as
+other members of NCTU Europe. We share the happiness and the bitterness of studying in Sweden and
+strive for graduation together. I will miss our wonderful weekly parties and movie nights.
+
+In the end, I like to express my gratitude to all my friends in Taiwan for helping me
+in every aspect and making me feel connected despite far from home.
+In particular, I would like to thank Cheng-dar Li, Yi-tzu Lin, and Fu-kuo Tseng.
+
+
+{\small{
+\paragraph{Acknowledgments}
+Thanks are due to Arnar Birgisson for interesting discussions.
+This work was funded by the Swedish research agencies VR and 
+the scholarship program for graduated students 
+from the Universidad Tecnol\'{o}gica Nacional, Facultad Regional Santa Fe. 
+}}
+
+% real report begins
+\cleardoublepage
+\pagestyle{plain}
+\pagenumbering{arabic}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 1 INTRODUCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}
+\label{Chap:Introduction}
+%\subimport{01-Introduction}{intro.tex}
+\input{01-introduction.tex}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 2 Taint Analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Taint Analysis in general + related works}
+\label{Chap:taint}
+\input{02-taint.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 3 A library for Taint Analysis in Python %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{A library for Taint Analysis in Python}
+\label{Chap:Library}
+\input{03-library.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 4  Implementation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Implementation}
+\label{Chap:Implementation}
+\input{04-implementation.tex}
+        generation of classe
+        taint aware
+        propagate func
+        propagate method
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 5  Limitations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Limitations}
+\label{Chap:Limitations}
+\input{05-limitations.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 6  Conclusions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Conclusions and future works}
+\label{Chap:Conclusions}
+\input{06-conclusion.tex}
+
+\section{Future Work}
+
+
+\section{Conclusion}
+% Function : sequential information flow, references, precise security types, 
+%            less burden of programmers(unification), close internal timing channel,
+%            case study
+% Advantage : low cost to migrate, practical, light-weighted, scheduler independent, 
+%             full permisiveness as before.
+% Cons : reference checking is delayed to run-time, debug message is not clear
+FlowHaskellRef extends FlowHaskell with reference manipulation and secure multithreaded programming.
+The new contributions are listed as following:
+\begin{enumerate}
+\item Complex security types permits more accurate description of data
+\item Reference manipulation provides possibility of shared resources
+\item Unification mechanism infers security types automatically and mitigates the responsibility of programmers
+\item Scheduler-independent run-time system eliminates {\em internal-timing} channels in multithreaded programming
+\item Two full case studies to evaluate FlowHaskellRef
+\end{enumerate}
+
+
+\chapter*{Appendix}
+\addcontentsline{toc}{chapter}{Appendix}
+
+\setcounter{section}{0}
+\renewcommand\thesection{\Alph{section}}
+
+\section{Library source code}
+
+\section{Test cases}
+
+\section{\suggestions source code}
+
+
+
+\bibliographystyle{abbrv}
+\bibliography{literature}
+
+\end{document}

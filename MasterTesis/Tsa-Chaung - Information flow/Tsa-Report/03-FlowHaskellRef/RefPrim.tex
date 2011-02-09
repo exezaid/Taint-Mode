@@ -1,0 +1,74 @@
+
+\section{Reference Primitive}
+\label{chap4:reference}
+% intro SecRef and operations
+% intro RefMonad
+% type system of reference primitive
+
+\begin{figure}[t]
+  \[\begin{array}{c}
+
+    \inference[$CREATEREF$]{}
+              { e(\st),\emptyset,\emptyset\proves \cod{createRef}~\ell~:~
+              \res{\typ}{\st}~->~\res{\typ~ref}{\st~\mathbf{ref}^{\ell}}} \\ \\
+
+    \inference[$READREF$]{}
+              { \top,\{\ell\guard \sts{2}\},\{\sts{1}\sqsubseteq \sts{2}\}
+                \proves \cod{readRef}~\sts{2}~:~
+                \res{\typ~ref}{\sts{1}~\mathbf{ref}^{\ell}}~->~\res{\typ}{\sts{2}}} \\ \\
+
+    \inference[$WRITEREF$]{}
+              { e(\st),\{\ell\guard \st\},\emptyset
+                \proves \cod{writeRef} :
+                \res{(\typ~ref,\typ)}{(\st~\mathbf{ref}^{\ell},\st)}~->~\res{()}{\bot}} \\
+    \end{array}
+  \]
+\caption{Type system of reference primitives}
+\label{fig:reference:typesystem}
+\end{figure}
+
+FlowHaskellRef adopts mutable references in the IO monad for experiment. An abstract data type
+\co{SecRef} is introduced as following(in RefOp.hs):
+\begin{verbatim}
+data SecRef a = MkSecRef (IORef a) (a -> a)
+\end{verbatim}
+Data type \co{SecRef} parameterises on the type of a reference's content. The constructor
+\co{MkSecRef} takes an \co{IORef} and a {\em projection} function. 
+The projection function is applied to the result of reading the reference and returns
+a value of the same type. The purpose of this function is explained in Sec.~\ref{chap3:lower}.
+
+Three standard operations for \co{SecRef} is provided(in RefOp.hs).
+\begin{verbatim}
+newSecRef :: a -> IO (SecRef a)
+newSecRef a = do r <- newIORef a
+                 return (MkSecRef r id)
+
+readSecRef :: SecRef a -> IO a
+readSecRef (MkSecRef r f) = do a <- readIORef r
+                               return (f a)
+
+writeSecRef :: SecRef a -> a -> IO ()
+writeSecRef (MkSecRef r f) a = writeIORef r a
+\end{verbatim}
+The projection function is set to \co{id} when creating new \co{SecRef}. In \co{readSecRef},
+the projection function \co{f} is applied to the result of reading internal IORef, \co{r}.
+Function \co{writeSecRef} simply writes a value to a reference.
+
+Type class \co{RefMonad} specifies a common interface for any monads and corresponding references
+which can be used in FlowArrowHaskell. The definition is as following(in RefOp.hs):
+\begin{verbatim}
+class RefMonad m r | m -> r where
+  createMRef :: a -> m (r a)
+  readMRef :: (r a) -> m a
+  writeMRef :: (r a) -> a -> m ()
+\end{verbatim}
+Type class \co{RefMonad} parameterises on a monad, \co{m}, and a reference type in the monad, \co{r}.
+It provides standard operations for reference manipulation. 
+Instance (\co{RefMonad} \co{IO} \co{SecRef}) is implemented directly by each operation of
+\co{SecRef}.
+
+Three standard operations for reference manipulation, called \co{createRef}, \co{readRef}, 
+and \co{writeRef}, are implemented in FlowHaskellRef. They lift methods of \co{RefMonad} into 
+\co{FlowArrowRef}. The implementation follows the type system in 
+Figure~\ref{fig:reference:typesystem} directly and can be found in FlowArrowRef.hs.
+

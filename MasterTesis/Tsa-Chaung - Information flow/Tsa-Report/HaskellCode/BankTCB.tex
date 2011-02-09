@@ -1,0 +1,65 @@
+\begin{Verbatim}[fontsize=\footnotesize,frame=lines,
+                 framesep=5mm, label={[BankTCB.hs]BankTCB.hs}]
+
+module BankTCB where
+
+import BankLattice
+import BankSystem
+import FlowArrowRef
+import Lattice
+import RLattice
+import Control.Arrow
+import SecureFlow
+import RefOp
+import BankKey
+import System.Random
+import Codec.Utils
+import Data.LargeWord
+import Codec.Encryption.RSA as RSA
+import Codec.Encryption.AES as AES
+import Codec.Encryption.Modes
+import Codec.Encryption.Padding
+import Priv
+
+-- Get client private key if password is correct.
+-- Not belongs to TCB but main requires it, so it is put in BankTCB.
+client_getPriKey :: (Privilege BankLabel) -> String -> 
+                    IO (Maybe (Protected ([Octet],[Octet])))
+client_getPriKey pr p =
+  if p /= clientPW
+    then return Nothing
+    else let key = clientPriKey >>> declassifyRef BOTTOM in
+         do pri <- expose pr (SecLabel (Lab BOTTOM)) key
+            return $ Just (tagRef BANK >>> 
+             lowerA BANK (pure (\()  -> (clientModulus,pri))))
+  where
+  clientPW = "0000"
+
+-- IO monad to simulate network
+main =
+  do -- Declare reference and protect them
+     atm_ATMNonce   <- getNewRef ATM_BANK (1::Int) (VSecLabel VAtm_bank)
+     atm_BankNonce  <- getNewRef BANK_ATM (2::Int) (VSecLabel VBank_atm)
+     atm_SessionKey  <- getNewRef BANK (3::Word128) (VSecLabel VBank)
+     bank_ATMNonce  <- getNewRef ATM_BANK (4::Int) (VSecLabel VAtm_bank) 
+     bank_BankNonce <- getNewRef BANK_ATM (5::Int) (VSecLabel VBank_atm)
+     bank_SessionKey <- getNewRef BANK 
+                                 (0x06a9214036b8a15b512e03d534120006 :: Word128) 
+                                 (VSecLabel VBank)
+     -- Protocol begin
+     auth_req <- atm_authRequest atm_ATMNonce (PR BANK)
+     auth_res <- bank_authResponse auth_req bank_ATMNonce bank_BankNonce 
+                                   bank_SessionKey (PR BANK)
+     tran_req <- atm_tranRequest auth_res atm_ATMNonce 
+                                 atm_BankNonce atm_SessionKey
+                                 (client_getPriKey (PR CLIENT)) (PR BANK)
+     tran_res <- bank_tranResponse tran_req bank_ATMNonce 
+                                   bank_BankNonce bank_SessionKey (PR BANK)
+     atm_resultProcess tran_res
+     return ()
+  where
+  getNewRef l init rs =
+    do ref <- createMRef init rs
+       let pref = lowerA l (pure (\() -> ref))
+       return pref
+\end{Verbatim}

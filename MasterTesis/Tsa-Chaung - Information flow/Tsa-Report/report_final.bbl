@@ -1,0 +1,196 @@
+\begin{thebibliography}{10}
+
+\bibitem{Castellani:Boudol:TCS02}
+G.~Boudol and I.~Castellani.
+\newblock Non-interference for concurrent programs and thread systems.
+\newblock {\em Theoretical Computer Science}, 281(1):109--130, June 2002.
+
+\bibitem{Denning:Denning:Certification}
+D.~E. Denning and P.~J. Denning.
+\newblock Certification of programs for secure information flow.
+\newblock {\em Comm. of the ACM}, 20(7):504--513, July 1977.
+
+%\bibitem{GNUPth}
+%R.~S. Engelschall.
+%\newblock Gnu pth - the gnu portable threads.
+%\newblock \texttt{http://www.gnu.org/software/pth/}, Nov. 2005.
+
+\bibitem{Goguen:Meseguer:Noninterference}
+J.~A. Goguen and J.~Meseguer.
+\newblock Security policies and security models.
+\newblock In {\em Proc. IEEE Symp. on Security and Privacy}, pages 11--20, Apr.
+  1982.
+
+%\bibitem{Huisman:Worah:Sunesen:CSFW06}
+%M.~Huisman, P.~Worah, and K.~Sunesen.
+%\newblock A temporal logic characterisation of observational determinism.
+%\newblock In {\em Proc. IEEE Computer Security Foundations Workshop}, July
+%  2006.
+
+\bibitem{Harris:Marlow:Jones:Herlihy:PPoPP05}
+T.~Harris, S.~Marlow, S.~Peyton Jones, M.~Herlihy.
+\newblock Composable Memory Transactions.
+\newblock In {\em Proceedings of the ACM Symposium on Principles and Practice
+of Parallel Programming}, June 2005.
+
+\bibitem{Hughes:SCP00}
+J.~Hughes.
+\newblock Generalising monads to arrows.
+\newblock In {\em Science of Computer Programming}, 
+  volumn 37, pages 67--111, May 2000.
+
+\bibitem{Hughes:ISSAFP05}
+J.~Hughes.
+\newblock Programming with Arrows.
+\newblock In {\em 5th International Summer School on Advanced Functional
+    Programming}, LNCS 3622, pages 73--129, Springer, 2005.
+
+\bibitem{Li:Zdancewic:CSFW}
+P.~Li and  S.~Zdancewic.
+\newblock Encoding information flow in Haskell.
+\newblock In {\em Proc. IEEE Computer Security  Foundations Workshop}, pages
+    16, July 2006.
+
+%\bibitem{Mantel:Sands:APLAS04}
+%H.~Mantel and D.~Sands.
+%\newblock Controlled downgrading based on intransitive (non)interference.
+%\newblock In {\em Proc. Asian Symp. on Programming Languages and Systems},
+%  volume 3302 of {\em LNCS}, pages 129--145. Springer-Verlag, Nov. 2004.
+
+\bibitem{Myers:Liskov:TSEM2000}
+A.~C. Myers, B. Liskov.
+\newblock Protecting privacy using the decentralized label model.
+\newblock In {\em ACM Transactions on Software Engineering and Methodology},
+   9(4):410-442, 2000.
+
+\bibitem{jif}
+A.~C. Myers, L.~Zheng, S.~Zdancewic, S.~Chong, and N.~Nystrom.
+\newblock {Jif}: {J}ava information flow.
+\newblock Software release. \texttt{http://www.cs.cornell.edu/jif}, July
+  2001--2006.
+
+\bibitem{Paterson:ICFP01}
+R. Paterson.
+\newblock A new notation for arrows.
+\newblock In {\em International Conference on Functional Programming}, pages
+  229--240, ACM Press, Sep. 2001.
+
+\bibitem{Paterson:TFP03}
+R. Paterson.
+\newblock Arrows and computation.
+\newblock In {\em The Fun of Programming}(Jeremy Gibbons and Oege de Moor, Eds.),
+  pages 201--222, Palgrave, 2003.
+
+\bibitem{Pottier:Simonet:POPL02}
+F.~Pottier and V.~Simonet.
+\newblock Information Flow Inference for ML.
+\newblock In {\em Proc. 29th ACM Symp. on Principles of Programming Languages(POPL)},
+   Portland, Oregon, Jan. 2002.
+
+\bibitem{Roscoe:SSP95}
+A.~W.~Roscoe.
+\newblock CSP and determinism in security modeling.
+\newblock In {\em Proc. IEEE Symp. on Security and Privacy}, pages 114-127
+          , May 1995. 
+
+\bibitem{Russo:Sabelfeld:CSFW06}
+A.~Russo and A.~Sabelfeld.
+\newblock Securing interaction between threads and the scheduler.
+\newblock In {\em Proc. IEEE Computer Security Foundations Workshop}, July
+  2006.
+
+%\bibitem{Sabelfeld:PSI01}
+%A.~Sabelfeld.
+%\newblock The impact of synchronisation on secure information flow in
+%  concurrent programs.
+%\newblock In {\em Proc. Andrei Ershov International Conference on Perspectives
+%  of System Informatics}, volume 2244 of {\em LNCS}, pages 225--239.
+%  Springer-Verlag, July 2001.
+
+%\bibitem{Sabelfeld:PSI03}
+%A.~Sabelfeld.
+%\newblock Confidentiality for multithreaded programs via bisimulation.
+%\newblock In {\em Proc. Andrei Ershov International Conference on Perspectives
+%  of System Informatics}, volume 2890 of {\em LNCS}, pages 260--273.
+%  Springer-Verlag, July 2003.
+
+%\bibitem{Sabelfeld:Mantel:SAS02}
+%A.~Sabelfeld and H.~Mantel.
+%\newblock Static confidentiality enforcement for distributed programs.
+%\newblock In {\em Proc. Symp. on Static Analysis}, volume 2477 of {\em LNCS},
+%  pages 376--394. Springer-Verlag, Sept. 2002.
+
+\bibitem{Sabelfeld:Myers:JSAC}
+A.~Sabelfeld and A.~C. Myers.
+\newblock Language-based information-flow security.
+\newblock {\em IEEE J. Selected Areas in Communications}, 21(1):5--19, Jan.
+  2003.
+
+\bibitem{Sabelfeld:Sands:CSFW00}
+A.~Sabelfeld and D.~Sands.
+\newblock Probabilistic noninterference for multi-threaded programs.
+\newblock In {\em Proc. IEEE Computer Security Foundations Workshop}, pages
+  200--214, July 2000.
+
+\bibitem{FlowCaml}
+V.~Simonet.
+\newblock The {Flow} {Caml} system.
+\newblock Software release. Located at
+  \texttt{http://cristal.inria.fr/$\sim$simonet/soft/flowcaml/}, July 2003.
+
+\bibitem{Sheard05}
+T.~Sheard.
+\newblock Putting curry-howard to work.
+\newblock In {\em Proc. of the 2005 ACM SIGPLAN workshop on Haskell,
+  page 74--85, 2005.}
+%\bibitem{Smith:CSFW01}
+%G.~Smith.
+%\newblock A new type system for secure information flow.
+%\newblock In {\em Proc. IEEE Computer Security Foundations Workshop}, pages
+%  115--125, June 2001.
+
+%\bibitem{Smith:CSFW03}
+%G.~Smith.
+%\newblock Probabilistic noninterference through weak probabilistic
+%  bisimulation.
+%\newblock In {\em Proc. IEEE Computer Security Foundations Workshop}, pages
+%  3--13, 2003.
+
+\bibitem{Smith:Volpano:MultiThreaded}
+G.~Smith and D.~Volpano.
+\newblock Secure information flow in a multi-threaded imperative language.
+\newblock In {\em Proc. ACM Symp. on Principles of Programming Languages},
+  pages 355--364, Jan. 1998.
+
+\bibitem{Tse:Washburn:jif}
+S.~Tse and G.~Washburn.
+\newblock Cryptographic Programming in Jif.
+\newblock Course project, 2003.
+  \texttt{http://www.cis.upenn.edu/~stse/bank/main.pdf}
+
+\bibitem{Volpano:Smith:Probabilistic}
+D.~Volpano and G.~Smith.
+\newblock Probabilistic noninterference in a concurrent language.
+\newblock {\em J. Computer Security}, 7(2--3):231--253, Nov. 1999.
+
+%\bibitem{Volpano:Smith:Irvine:Sound}
+%D.~Volpano, G.~Smith, and C.~Irvine.
+%\newblock A sound type system for secure flow analysis.
+%\newblock {\em J. Computer Security}, 4(3):167--187, 1996.
+
+%\bibitem{Winskel:Semantics}
+%G.~Winskel.
+%\newblock {\em The Formal Semantics of Programming Languages: {An}
+%  Introduction}.
+%\newblock MIT Press, Cambridge, MA, 1993.
+
+\bibitem{Zdancewic:Myers:CSFW03}
+S.~Zdancewic and A.~C. Myers.
+\newblock Observational determinism for concurrent program security.
+\newblock In {\em Proc. IEEE Computer Security Foundations Workshop}, pages
+  29--43, June 2003.
+
+
+
+
+\end{thebibliography}

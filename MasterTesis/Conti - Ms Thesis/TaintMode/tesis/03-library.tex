@@ -1,0 +1,357 @@
+In this chapter we review \texttt{taintmode.py}, a library
+presented orinally in \cite{PythonLib}. After some words on the 
+subject of implicit flows, wich are not covered by the library,
+we'll show simple examples of use, more elavorated API examples
+and finally we'll apply the library to \suggestions, the application
+example introduced in \ref{Chap:Introduction}.
+
+\section*{Implicit flows}
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{implicit.py} 
+\end{minipage}
+\caption{\label{fig:implicit}An implicit flow}
+}}
+\end{figure}
+
+On most situations, taint analysis \cite{Perl,Ruby} 
+propagates taint information on assignments.  
+Intuitively, when the right-hand side of an assignment uses a tainted value, 
+the variable appearing on the left-hand side becomes tainted.
+Taint analysis can be seen as an information-flow tracking 
+mechanism for integrity \cite{Sabelfeld:Myers:JSAC}. 
+In fact, taint analysis is just a mechanism to 
+track explicit flows, i.e. direct flows of information 
+from one variable to another. 
+Taint analysis tends to ignore 
+implicit flows \cite{Denning:Denning:Certification}, i.e. 
+flows through the control-flow constructs of the language. 
+
+Figure \ref{fig:implicit} presents an implicit 
+flow. Variables \texttt{t} and \texttt{u} are 
+tainted and untainted, respectively.
+Observe that variable \texttt{u} 
+is untainted after the execution of the branch since 
+an untainted value ($\texttt{'a'}$ or
+$\texttt{''}$) is assigned to it. Yet, the value of the tainted variable 
+$\texttt{t}$ is copied into the untainted variable 
+\texttt{u} when \texttt{t == 'a'}. 
+% REVER SI DEJO ESTE EJEMPLO O UNO MAS PYTHONICO
+It is not difficult to imagine 
+programs that circumvent the taint analysis by
+copying the content of tainted strings 
+into untainted ones by using implicit flows\cite{Russo:IOS}.
+
+In scenarios where attackers has full control over the code 
+(e.g. when the code is potentially malicious), implicit flows present
+an effective way to circumvent the taint
+analysis. In this case, the attackers' goal  is to craft the code and input 
+data in order to circumvent security mechanisms. There is a large body
+of literature on the area of language-based security regarding 
+how to track implicit flows \cite{Sabelfeld:Myers:JSAC}. 
+
+
+In the other hand, there're scenarios where 
+the code is non-malicious, i.e. written without malice. 
+Despite the good intentions and experience of programmers, 
+the code might still contain vulnerabilities 
+as the ones
+described in Section \ref{sec:example}. The attackers' goal  
+consists on craft input data in order to exploit 
+vulnerabilities and/or corrupt data. In this scenario,
+taint analysis certainly helps to discover vulnerabilities. 
+
+How dangerous are implicit flows in non-malicious code? We argue that they
+are frequently harmless \cite{Russo:IOS}. The reason for that 
+relies on that non-malicious programmers
+need to write a more involved, and rather unnatural,
+code in order to, for instance, copy tainted strings into untainted ones. 
+In contrast, to produce explicit flows, programmers simply
+need to forget a call to some sanitization function. 
+In this work, we consider 
+scenarios where the analyzed code is non-malicious. 
+
+
+
+\section{Using the library}
+
+\subsection*{Tags}
+
+By default, tags can take values  
+\texttt{XSS}, \texttt{SQLI}, \texttt{OSI} (Operating System Injection), and
+\texttt{II} (Interpreter Injection).
+These values are used to indicate specific vulnerabilities that 
+could be exploited by tainted data.
+For instance, 
+tainted data associated with tag \texttt{SQLI} is likely to exploit 
+SQL injection vulnerabilities.
+
+\subsection*{API Examples}
+This section %of
+includes examples of the key concepts handled by the library,
+which are the key concepts of the whole Taint Analysis idea:
+
+\begin{enumerate}
+\item Untrusted sources: from wich untrusted values arrives to the program.
+\item Cleaner functions: used to sanitizes untrusted values into trusted ones.
+\item Sensitive sinks: places where we don't want utrusted values to arrive.
+\end{enumerate}
+
+The examples are capures of an interactive session in 
+the Python's REPL\footnote{Read-Eval-Print-Loop}. % SALE AL PIE?
+
+\subsection*{The \texttt{taint} primitive}
+
+\texttt{taint(o, v=None)}
+
+\texttt{taint} is a helper function for taint
+the value o with the vulnerability v.
+
+If v is not provided, taint with all types of taints.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_taint1.txt} 
+\end{minipage}
+\caption{\label{fig:taint1}Tainting with all vulnerabilities}
+}}
+\end{figure}
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_taint2.txt} 
+\end{minipage}
+\caption{\label{fig:taint2}Tainting with Interpreter Injection vulnerability}
+}}
+\end{figure}
+
+\subsection*{The \texttt{tainted} primitive}
+
+\texttt{tainted(o, v=None)}
+
+\texttt{tainted} tells if a value o is tainted for the given
+vulnerability v.
+
+If v is not provided, checks for all taints. If the value is tainted
+with at least one vulnerability, returns True.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_tainted.txt} 
+\end{minipage}
+\caption{\label{fig:taint1}Is a value tainted?}
+}}
+\end{figure}
+
+\subsection*{How to define an untrusted source?}
+
+The simplest way of marking an input as untrusted, is using the \texttt{untrusted} decorator.
+One way to use it is using Python's sintactic sugar for decorators.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_untrusted1.txt} 
+\end{minipage}
+\caption{\label{fig:untrusted1}An utrusted source using the \texttt{untrusted} decorator}
+}}
+\end{figure}
+
+In the example, the decorator is applied to the \texttt{values\_from\_outside} function
+when it's defined. After this, every time the function is called, the returned value
+is tainted with all the vulnerabilities; that is, is marked with all the avaliable tags.
+
+The second way of using the \texttt{untrusted} decorator is through a function call.
+This is extremly useful when wanting to mark a function for which we don't have access 
+to its definition. For example, marking third party libraries.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_untrusted2.txt} 
+\end{minipage}
+\caption{\label{fig:untrusted2}An utrusted source using the \texttt{untrusted} decorator as a function call}
+}}
+\end{figure}
+
+There is a more elavorated use case and it mainly take place when using some frameworks.
+We are asked to define a new function or method and the framework is in charge of
+calling this function when ever a value from the outside is received.
+
+The \texttt{untrusted\_args} decorator have two arguments. The first one is a list 
+of positions and the second one is a list o keywords. In this case, the
+positional arguments in the positions list and the keyword arguments in the kwywords
+list are the ones that are marked as untrusted, not the returned value.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_untrusted_args.txt} 
+\end{minipage}
+\caption{\label{fig:untrusted_args}An utrusted source using the \texttt{untrusted\_args} decorator}
+}}
+\end{figure}
+
+In figure \ref{fig:untrusted_args} the decorator arguments express that positions 1 and 2 ass well
+as keyword \texttt{file} will be marked as untrusted whenever the function is executed.
+
+The rest of the code make a function call and capture the result in two variables that are then iterated
+in order to show which values are tainetd and which are not. 
+
+\subsection*{How to define a cleaner function?}
+
+\texttt{cleaner(v)}
+
+\texttt{cleaner} is a decorator used to tell that a method or function is able to clean
+taints on a value, that is, remove certain vulnerability tag (\texttt{v} argument).
+
+Again, the decorator can be applied using the sintactic sugar provided by the
+language or a function call.
+
+In image \ref{fig:cleaner1} a value tainted with \texttt{XSS} is cleaned using
+the function plain\_text which was already marked as capable to remove that vulnerability.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_cleaner1.txt} 
+\end{minipage}
+\caption{\label{fig:cleaner1}A cleaner function}
+}}
+\end{figure}
+
+There is also a similiar decorator called \texttt{validator}, with a different semantic.
+
+\texttt{validator(v, cond=True, nargs=[], nkwargs=[])}
+
+It mark a function or method as capable to validate its input.
+
+\texttt{nargs} is a list of positions. Positional arguments in that positions are
+the ones validated.
+\texttt{nkwargs} is a list of keywords. Keyword arguments for those keys are the ones
+validated.
+
+\texttt{cond} can be either \texttt{True} or \texttt{False}.
+If the decorated function returns cond, tag v will be removed from the the validated
+inpunt.
+
+For example, in a function called \texttt{is\_not\_digit}, cond is liked to be False. If
+\texttt{is\_not\_digit} returns \texttt{False}, then the value \emph{is} valid and have no craft data
+on it. 
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_validator2.txt} 
+\end{minipage}
+\caption{\label{fig:cleaner1}The \texttt{is\_not\_digit} validator}
+}}
+\end{figure}
+
+For a function called is\_digit, cond is liked to be True.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_validator1.txt} 
+\end{minipage}
+\caption{\label{fig:cleaner1}The \texttt{is\_digit} validator}
+}}
+\end{figure}
+
+\subsection*{How to define a sensitive sink?}
+
+\texttt{ssink(v=None, reached=reached)}
+
+\texttt{ssink} marks a function or method as sensitive to tainted data.
+If it is called with a value with the v tag (or any tag if v is None),
+the decorated function it's not executed and reached is executed instead.
+
+These sinks are sensitive to a kind of vulnerability, and must be specified when
+the decorator is used.
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{ex_sensitive.txt} 
+\end{minipage}
+\caption{\label{fig:untrusted}An utrusted source}
+}}
+\end{figure}
+
+If the sentive function is called with a value tainted with the same vulnerability the sink is
+sentive to, then the execution can be cut and a warning message printed explaing what happened.
+
+Calling the function with other values, event tainted, is allowed.
+
+\section{Hardening \suggestions}
+\label{sec:securing}
+
+In section \ref{Sec:Suggestions} we introduced \suggestions, a web application used in an
+office to organized what to eat each day. We also showed some security problems the application have.
+
+In this section, we'll show hot to use \texttt{taintmode.py} to Hardening \suggestions.
+
+\subsection*{Imports}
+
+The only thing we need to add to the original program are the following lines:
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{harden.txt} 
+\end{minipage}
+\caption{\label{fig:secured} Secure version of \suggestions}
+}}
+\end{figure}
+
+We import from the \texttt{taintmode} module, mark \texttt{web.input} as a
+untrusted soruce, and \texttt{os.system} as a sensitive sink to Operating System Injection (\texttt{OSI}).
+Finally, we execute \texttt{taintmode.ends\_execution()} in order to explicitly say that we want the
+execution to be cut when ever a problem occurs.
+
+If now, we try to submit some data into the application form, we'll see that nothing happens. Nothing?
+We don't see anything new in the web page because the execution was cut. If we see the log files of the 
+application, we'll find something like \ref{fig:error}
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[]{harden_error.txt} 
+\end{minipage}
+\caption{\label{fig:securederror} \suggestions}
+}}
+\end{figure}
+
+The input data was harmless, but anyway the execution was cut. A value with an \texttt{OSI}
+taint arrived to an \texttt{OSI}-sensitive sink. How do we fix the app in order to make it
+useful while it stop attackers? The application needs to use a cleaner function. So we impor it
+and mark it as capable to clean data agains \texttt{OSI}:
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{harden_cleaner.txt} 
+\end{minipage}
+\caption{\label{fig:securedcleaner} Import a cleaner}
+}}
+\end{figure}
+
+The final step is to \emph{use} \texttt{osi\_cleaner} in the code:
+
+\begin{figure}[t]
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{harden_new.txt} 
+\end{minipage}
+\caption{\label{fig:securednew} Using the cleaner}
+}}
+\end{figure}
+
+Observe that the added code is minimal and as less intrusive as possible.
+% ALGO MAS PARA CERRAR EL CAPITULO?

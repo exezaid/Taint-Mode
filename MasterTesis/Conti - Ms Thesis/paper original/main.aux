@@ -1,0 +1,125 @@
+\relax 
+\citation{StateWebSecurity}
+\citation{FFAWebSecurity}
+\citation{OWASP:Top10:2007}
+\citation{Perl}
+\citation{Ruby}
+\citation{WebSSARI}
+\citation{Jovanovic06pixy:a}
+\citation{Sabelfeld:Russo:PSI09}
+\@writefile{toc}{\contentsline {title}{A Taint Mode for Python via a Library}{1}}
+\@writefile{toc}{\authcount {2}}
+\@writefile{toc}{\contentsline {author}{Juan Jos\'{e} Conti\unskip {} \and Alejandro Russo\unskip {}}{1}}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}}
+\newlabel{sec:intro}{{1}{1}}
+\citation{BekmanCholet2003}
+\citation{thomas2004prub}
+\citation{Nguyen05}
+\citation{KozlovPetukhov07}
+\citation{WikiPython}
+\citation{Lutz:1999:LP}
+\citation{Perl}
+\citation{Nguyen05}
+\citation{Haldar05dynamictaint}
+\citation{KozlovPetukhov07}
+\citation{Futo07}
+\citation{SeoLam2010}
+\citation{KozlovPetukhov07}
+\@writefile{lol}{\contentsline {lstlisting}{email.py}{2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Code for \texttt  {email.py}}}{2}}
+\newlabel{fig:example}{{1}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}A motivating example}{2}}
+\newlabel{sec:example}{{1.1}{2}}
+\citation{Sabelfeld:Myers:JSAC}
+\citation{Denning:Denning:Certification}
+\citation{Russo:IOS}
+\citation{Sabelfeld:Myers:JSAC}
+\@writefile{lol}{\contentsline {lstlisting}{uses.txt}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  Different invocations for \texttt  {email.py}}}{3}}
+\newlabel{fig:uses}{{2}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}A library for taint analysis}{3}}
+\newlabel{sec:library}{{2}{3}}
+\@writefile{lol}{\contentsline {lstlisting}{implicit.py}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces An implicit flow}}{3}}
+\newlabel{fig:implicit}{{3}{3}}
+\citation{Russo:IOS}
+\citation{Twisted}
+\@writefile{lol}{\contentsline {lstlisting}{api.txt}{4}}
+\@writefile{lol}{\contentsline {lstlisting}{api2.txt}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces API for taint analysis}}{4}}
+\newlabel{fig:API}{{4}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Using the library}{4}}
+\newlabel{sec:using}{{2.1}{4}}
+\citation{PythonLib}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Hardening \texttt  {email.py}}{5}}
+\newlabel{sec:secure:email}{{2.2}{5}}
+\@writefile{lol}{\contentsline {lstlisting}{safeclean.py}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces  Secure version of module \texttt  {email.py} }}{5}}
+\newlabel{fig:example:secure}{{5}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Implementation}{5}}
+\newlabel{sec:implementation}{{3}{5}}
+\@writefile{lol}{\contentsline {lstlisting}{taint\textunderscore class.py}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces  Function to generate taint-aware classes}}{6}}
+\newlabel{fig:generate}{{6}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Generating taint-aware classes}{6}}
+\newlabel{sec:general}{{3.1}{6}}
+\@writefile{lol}{\contentsline {lstlisting}{propagate.py}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces  Propagation of taint information}}{6}}
+\newlabel{fig:propagate}{{7}{6}}
+\citation{IntroductionFunctional}
+\citation{PythonLib}
+\@writefile{lol}{\contentsline {lstlisting}{factory.py}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces  Taint-aware classes for strings and integers}}{7}}
+\newlabel{fig:factory}{{8}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Decorators}{7}}
+\@writefile{lol}{\contentsline {lstlisting}{taint.py}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces  Code for \texttt  {untrusted}}}{7}}
+\newlabel{fig:untrusted}{{9}{7}}
+\citation{Perl}
+\citation{Nguyen05}
+\citation{Jovanovic06pixy:a}
+\citation{KozlovPetukhov07}
+\citation{Futo07}
+\citation{SeoLam2010}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Taint-aware functions}{8}}
+\@writefile{lol}{\contentsline {lstlisting}{propagate\textunderscore func.py}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces  Propagation of taint information among possibly different taint-aware objects}}{8}}
+\newlabel{fig:propagate_func}{{10}{8}}
+\@writefile{lol}{\contentsline {lstlisting}{example\textunderscore connect.py}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces  Taint-aware functions for strings and integers}}{8}}
+\newlabel{fig:propagate_func:example}{{11}{8}}
+\citation{Perl}
+\citation{Nguyen05}
+\citation{Jovanovic06pixy:a}
+\citation{KozlovPetukhov07}
+\citation{Futo07}
+\citation{SeoLam2010}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Scope of the library}{9}}
+\citation{Chang:et:al:CCS08}
+\citation{Perl}
+\citation{thomas2004prub}
+\citation{WebSSARI}
+\citation{WebSSARI}
+\citation{Nguyen05}
+\citation{Futo07}
+\citation{Pietraszek05defendingagainst}
+\citation{Jovanovic06pixy:a}
+\citation{Saner}
+\citation{Monga:et:all:2009}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Related Work}{10}}
+\newlabel{sec:related}{{4}{10}}
+\citation{Haldar05dynamictaint}
+\citation{TrippPFSW09}
+\citation{Livshits:Lam:USENIX}
+\citation{PengLi+:Arrows}
+\citation{Tsai+:Library}
+\citation{Russo+:Haskell08}
+\citation{KozlovPetukhov07}
+\citation{SeoLam2010}
+\citation{KozlovPetukhov07}
+\citation{SeoLam2010}
+\bibstyle{abbrv}
+\bibdata{literature}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusions}{12}}
+\newlabel{sec:conclusions}{{5}{12}}
+\@writefile{toc}{\contentsline {paragraph}{Acknowledgments}{12}}

@@ -1,0 +1,52 @@
+This is BibTeX, Version 0.99c (TeX Live 2009/Debian)
+The top-level auxiliary file: report_final.aux
+The style file: abbrv.bst
+Database file #1: literature.bib
+Warning--to sort, need author or key in Perl
+Warning--to sort, need author or key in Ruby
+Warning--to sort, need author or key in Python
+Warning--to sort, need author or key in WikiPython
+Warning--to sort, need author or key in Django
+Warning--to sort, need author or key in Twisted
+You've used 25 entries,
+            2118 wiz_defined-function locations,
+            704 strings with 9120 characters,
+and the built_in function-call counts, 7121 in all, are:
+= -- 685
+> -- 301
+< -- 4
++ -- 126
+- -- 96
+* -- 409
+:= -- 1115
+add.period$ -- 74
+call.type$ -- 25
+change.case$ -- 119
+chr.to.int$ -- 0
+cite$ -- 31
+duplicate$ -- 299
+empty$ -- 648
+format.name$ -- 96
+if$ -- 1560
+int.to.chr$ -- 0
+int.to.str$ -- 25
+missing$ -- 20
+newline$ -- 123
+num.names$ -- 38
+pop$ -- 190
+preamble$ -- 1
+purify$ -- 98
+quote$ -- 0
+skip$ -- 229
+stack$ -- 0
+substring$ -- 310
+swap$ -- 66
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 92
+warning$ -- 6
+while$ -- 56
+width$ -- 27
+write$ -- 248
+(There were 6 warnings)

@@ -1,0 +1,20 @@
+>>> @untrusted_args([1,2], ['file'])
+... def values_from_outside(*args, **kwargs):
+...     return args, kwargs
+... 
+>>> vals, keys = values_from_outside(42, 88, 7, file='help.txt', sev=1)
+>>> vals
+(42, 88, 7)
+>>> keys
+{'sev': 1, 'file': 'help.txt'}
+>>> for x in vals:
+...     print x, tainted(x)
+... 
+42 False
+88 True
+7 True
+>>> for x in keys.values():
+...     print x, tainted(x)
+... 
+1 False
+help.txt True

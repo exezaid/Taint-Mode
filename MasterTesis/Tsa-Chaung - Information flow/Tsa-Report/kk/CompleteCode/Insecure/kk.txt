@@ -1,0 +1,13 @@
+   ___         ___ _
+  / _ \ /\  /\/ __(_)
+ / /_\// /_/ / /  | |      GHC Interactive, version 6.4.2, for Haskell 98.
+/ /_\\/ __  / /___| |      http://www.haskell.org/ghc/
+\____/\/ /_/\____/|_|      Type :? for help.
+
+Loading package base-1.0 ... linking ... done.
+Ok, modules loaded: Shopping, FlowArrowRef, SecureFlow, Priv, RefOp, RLattice, Unification, Lattice.
+*Shopping> main
+Loading package mtl-1.0 ... linking ... done.
+Loading package stm-1.0 ... linking ... done.
+Interrupted.
+*Shopping> 

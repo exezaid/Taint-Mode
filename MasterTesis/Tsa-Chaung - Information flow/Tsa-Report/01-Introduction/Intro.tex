@@ -1,0 +1,107 @@
+
+Privacy has been an ever important issue in today's society. We enter our 
+credit card numbers on webs to do on-line shopping. We use our email to
+subscribe on-line magazines, newsletters, and advertisements which intrigue us.
+We have detail personal information recorded in bank companies and medical
+organizations. Various kinds of computing systems managing tons of
+data for us alleviate our already busy life a lot, especially in a
+information explosion age like today. But what happened if a computing 
+system have some flaws in processing our private data and, unintentionally
+or intentionally, reveal them to bad guys? We probably receive extra bill from
+a credit card company, be overwhelmed by spam, or get a strange call during night.
+An unsafe computing system generally lead to a bigger problem. Would it 
+be great if we have a mechanism to control data dissemination in
+a system? It will substantially increase reliability of a system.
+
+In many cases, security problems regarding improper handling sensitive data 
+arise from unintentional mistakes of programmers.
+Consider a salary program of a bank system where there are two procedures, 
+perProc is for normal personnel to access nonsensitive data, such as personal 
+salary, and admProc is for manager to access sensitive data, salary of all
+personnel, for instance. It is possible for a programmer to call the wrong
+procedure by mistake when improving the code, in which admProc is called 
+when the user is just a normal staff. If he or she doesn't realize
+such flaw and update the running program, now all personnel can see the 
+salary of his or her colleagues.
+
+There are also some cases that somebody try to leak information
+deliberately. Nowadays computer programs 
+are usually huge and complex. It is normal that a person who we don't even
+know writes a small extension and hope us to merge it into our program. 
+It may require some sensitive data to perform the task. But the problem is
+how do we know his or her program use these sensitive data properly. He or she
+could send a copy of these data to somebody who will use them illegally. 
+On the other hand, examining the code to find the usages of sensitive data
+manually are too tedious and almost impossible if the extension is big.
+
+The problems above arise from lack of security mechanisms to define and enforce
+policy of use of sensitive data in a program, which is one type of information-flow 
+security. As described in~\cite{Sabelfeld:Myers:JSAC},
+there has been many conventional security mechanisms used in practical 
+computing system for a long time. These mechanisms includes access controls, 
+firewalls, and anti-virus software. But none of them are end-to-end security 
+mechanisms. Access control, for instance, only guarantees a user has sufficient 
+privilege to acquire secret data, but not how the secret data is propagated 
+and used. To guarantee information-flow security, we need some mechanism to
+keep track of data flowing in a program and make sure they are not used
+improperly.
+
+In the past few decades, researchers has shown that language techniques are 
+very useful in information-flow security~\cite{Sabelfeld:Myers:JSAC}. Static
+program analysis is discovered to be effective~\cite{Denning:Denning:Certification}
+because it has similar nature as information-flow security. Both of
+them are reasoning on all branches of program at the same time, rather than
+certain execution path of program. The compositional property of 
+information-flow security makes it suitable to enforce security policy as
+type checking at compile time. There are two full-fledged programming language
+implementations so far, Jif~\cite{jif} and FlowCaml~\cite{FlowCaml}. 
+They both adopt programming language techniques to specify and enforce 
+information-flow policy.
+
+Li and Zdancewic~\cite{Li:Zdancewic:CSFW}, on the other hand, developed an 
+embedded language based on the {\em arrows} interface in Haskell to enforce 
+information-flow policy. We call it FlowHaskell.
+Without information-flow type system directly implemented in compiler
+of Haskell, static constraints are used to guarantee information-flow policy. 
+If all the constraints are satisfied, then underlying secure computation is 
+well-typed according to an information-flow policy.
+Information-flow constraints are collected and resolved at run-time before 
+secure computation can execute. This approach has a major advantage.  
+That is, Programmers can switch between host language and embedded 
+language easily. They can get most of jobs done in their familiar
+language and focus on security sensitive part with embedded language.
+In this way, programmers would be more likely to use information-flow
+language in practice. Many existing applications can also be upgraded
+to guarantee information-flow security with small changes, comparing to 
+rewriting whole program.
+
+In addition to sequential programs, multithreaded programs are very 
+prevalent in today's computing system as well. Network programming
+is one of the areas where multithreading is used and encouraged.
+A new thread is often spawned to handle a new client after a connection
+is established. In many applications, clients demand limited resources
+from a server. Those resources can be accessed by client threads in
+any order. Indeed, share resources are usually required in concurrent
+programming with producer-consumer pattern.
+However, due to share resource, multithreaded programs exploit new
+information-flow security problems and become an interesting 
+research topic of its own~\cite{Sabelfeld:Myers:JSAC}. There have
+been many theoretical results but only few or maybe no practical
+implementation at all. Jif~\cite{jif}, FlowCaml~\cite{FlowCaml},
+and FlowHaskell~\cite{Li:Zdancewic:CSFW} all
+have no support for multithreaded information-flow security.
+
+\paragraph{Contribution}
+Our project is based on FlowHaskell~\cite{Li:Zdancewic:CSFW}, 
+and intend to support information-flow security in multithreaded programming. 
+Our work includes,
+\begin{enumerate}
+\item Defining a new framework for complex security types
+\item Developing primitives for reference manipulation in the new framework
+\item Extending support for information-flow security in multithreaded 
+programming
+\item Evaluating expressiveness and usefulness of the library by case study 
+\end{enumerate}
+
+The following sections explain background knowledge
+necessary to understand rest of the report.

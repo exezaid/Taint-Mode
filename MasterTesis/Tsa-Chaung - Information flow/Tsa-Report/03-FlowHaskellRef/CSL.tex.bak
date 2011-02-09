@@ -1,0 +1,217 @@
+
+\section{Complex Security Types}
+\label{chap3:CSL}
+
+% Note
+% lattice label  -- defined in Lattice class
+% security label -- defined in SecType
+% explain why complex security type is necessary
+% show SecType and explain every constructor
+% show MultiLattice explain each operator
+% modular way of expanding
+
+\begin{figure}[t]
+\[
+\st\ ::=\ \ell\ |\ \st\ {\mathbf{ref}}^{\ell}\ |\ (\st,\st)\ |\ ({\mathbf{either}}\ \st\ \st\ )^{\ell}\ |\ {\mathbf{high}}
+\]
+\caption{Security types}
+\label{fig:cst}
+\end{figure}
+
+\begin{figure}[t]
+\[
+\typ\ ::= int\ |\ \typ\ ref\ |\ (\typ,\typ)\ |\ either\ 
+\]
+\caption{Types}
+\label{fig:types}
+\end{figure}
+
+\begin{figure}[t]
+\[
+ \begin{array}{c}
+   \inference[]{\ell_1 \sqsubseteq \ell_2}{\ell_1 \leq \ell_2} \quad
+   \inference[]{\sts{1}=\sts{2} \quad \ell_1 \sqsubseteq \ell_2}
+               {\sts{1}\ \mathbf{ref}^{\ell_1} \leq \sts{2}\ \mathbf{ref}^{\ell_2}} \\ \\
+   \inference[]{\sts{1} \leq \sts{3} \quad \sts{2} \leq \sts{4} }
+               {(\sts{1},\sts{2}) \leq (\sts{3},\sts{4})}
+   \inference[]{\ell_1 \sqsubseteq \ell_2 \quad \sts{1} \leq \sts{3} \quad \sts{2} \leq \sts{4}}
+               {(\mathbf{either}\ \sts{1}\ \sts{2})^{\ell_1} \leq 
+                (\mathbf{either}\ \sts{3}\ \sts{4})^{\ell_2} } \quad
+ \end{array} 
+\]
+\caption{Subtyping}
+\label{fig:subtyping}
+\end{figure}
+
+\begin{figure}[t]
+\[
+  \begin{array}{c}
+  \inference[]{}{e(\ell)~->~\ell} \quad
+  \inference[]{}{e(\st~\mathbf{ref}^\ell)~->~\ell} \quad
+  \inference[]{e(\sts{1})~->~\ell_1 \quad e(\sts{2})~->~\ell_2}
+              {e((\sts{1},\sts{2}))~->~\ell_1\sqcup \ell_2} \\ \\
+  \inference[]{}
+              {e((\mathbf{either}~\sts{1}~\sts{2})^\ell)~->~\ell} \quad
+  \inference[]{}{e(\mathbf{high})~->~\top} \\
+  \end{array}
+\]
+\caption{Operator $e$}
+\label{fig:extract}
+\end{figure}
+
+\begin{figure}[t]
+\[
+  \begin{array}{c}
+  \inference[]{}{\tagup~\ell_1~\ell_2~->~\ell_2} \quad
+  \inference[]{}{\tagup~\st~\mathbf{ref}^{\ell_1}~\ell_2~->~\st~\mathbf{ref}^{\ell_2}} \quad
+  \inference[]{\tagup~\sts{1}~\ell~->~\sts{3} \quad \tagup~\sts{2}~\ell~->~\sts{4}}
+              {\tagup~(\sts{1},\sts{2})~\ell~->~(\sts{3},\sts{4})} \\ \\
+  \inference[]{\tagup~\sts{1}~\ell_2~->~\sts{3} \quad \tagup~\sts{2}~\ell_2~->~\sts{4}}
+              {\tagup~(\mathbf{either}~\sts{1}~\sts{2})^{\ell_1}~\ell_2~->~
+                      (\mathbf{either}~\sts{3}~\sts{4})^{\ell_2}} \quad
+  \inference[]{}
+              {\tagup~\mathbf{high}~\ell~->~\mathbf{high}}
+  \end{array}
+\]
+\caption{Operator $\tagup$}
+\label{fig:tagup}
+\end{figure}
+
+\begin{figure}[t]
+\[
+   \begin{array}{c}
+   \inference[]{\ell_1 \sqsubseteq \ell_2}{\decl~\ell_1~\ell_2~\ell_2~->~\ell_1} \quad
+   \inference[]{\ell_1 \not\sqsubseteq \ell_2}{\decl~\ell_1~\ell_2~\ell_2~->~\ell_2} \\ \\
+   \inference[]{\decl~\ell_1~\ell_2~\ell_2~->~\ell_3 \quad \decl~\sts{1}~\sts{2}~\ell_2~->~\sts{3}}
+               {\decl~(\sts{1}~\mathbf{ref}^{\ell_1})~(\sts{2}~\mathbf{ref}^{\ell_2})~\ell_2~->~
+                \sts{3}~\mathbf{ref}^{\ell_3}} \quad
+   \inference[]{\decl~\sts{1}~\sts{3}~\ell~->~\sts{5} \quad \decl~\sts{2}~\sts{4}~\ell~->~\sts{6}}
+               {\decl~(\sts{1},\sts{2})~(\sts{3},\sts{4})~\ell~->~(\sts{5},\sts{6})} \\ \\
+   \inference[]{\decl~\ell_1~\ell_2~\ell_2~->~ \ell_3 \quad \decl~\sts{1}~\sts{3}~\ell_2~->~\sts{5} \quad
+                \decl~\sts{2}~\sts{4}~\ell_2~->~\sts{6}}
+               {\decl~(\mathbf{either}~\sts{1}~\sts{2})^{\ell_1}~(\mathbf{either}~\sts{3}~\sts{4})^{\ell_2}
+                ~\ell_2~->~\mathbf{either}~\sts{5}~\sts{6})^{\ell_3}} \quad
+   \inference[]{} 
+               {\decl~\mathbf{high}~\st~\ell~->~\st} \\
+   \end{array}
+\]
+\caption{Operator $\decl$}
+\label{fig:decl}
+\end{figure}
+
+A single security label in FlowHaskell is not sufficient to capture the security types required
+by a reference whose identity and content may have different security levels.
+A Complex security types is extended in FlowHaskellRef to resolve the limitation.
+The complex security type, as in Figure~\ref{fig:cst}, is based on a lattice
+type, $l$, and provide different security labels for different data.
+Each complex security label corresponds to the security label of a type, as
+showed in Figure~\ref{fig:types}.
+Data types that are not specified in Figure~\ref{fig:types} are protected by the security 
+label $\ell$, which is a lattice label.
+Abstract data type \co{SecType} parameterises over a 
+lattice type and implements the complex security type in Figure~\ref{fig:cst}.
+The definition of \co{SecType} is as below(in Lattice.hs):
+\begin{verbatim}
+data SecType l = SecLabel l | Ref (SecType l) l | 
+                 Pair (SecType l) (SecType l) |
+                 SecEither (SecType l) (SecType l) l |
+                 SecHigh  
+     deriving (Eq, Show)
+\end{verbatim}
+Type variable \co{l} is a lattice label defined by programmers.
+Constructor \co{SecLabel} takes a lattice label and represents a security
+label for data types \co{Int}, \co{Bool}, and all other types not
+specified in Figure~\ref{fig:types}. 
+Constructor \co{Ref} takes a complex security label for its content and
+a lattice label for a reference's identity. The complex security label
+for reference is based on the work of Pottier and Simonet~\cite{Pottier:Simonet:POPL02}.
+Constructor \co{Pair} takes security labels for the first and the 
+second element respectively. 
+Constructor \co{SecEither} takes two security labels for the two constructors
+of \co{Either} type in Haskell, \co{Left} and \co{Right}. The thrid parameter
+is a lattice label protecting the identity of a \co{Either} type. It represents
+the secuirty level required to distinguish the two constructors.
+Constructor \co{SecHigh} represents any complex security label with each lattice
+label annotation being a top element in the lattice. The purpose of introducing
+\co{SecHigh} is explained in~\ref{chap3:pure}.
+
+Security type $\st$ exhibits a partial ordering among security labels of identical
+constructors. The partial ordering of the underlying lattice can
+be lifted to $\st$ and form several new lattices. For example, $(\ell_1,\ell_2)$ and $(\ell_3,\ell_4)$
+are in a lattice because they are both a pair of lattice labels.
+Type class \co{MultiLattice} captures this idea and provides
+required operations(in Lattice.hs).
+\begin{verbatim}
+class (Lattice l, Eq (a l), Show (a l)) 
+        => MultiLattice a l where
+  mlabel_top :: a l -> a l
+  mlabel_bottom :: a l -> a l
+  mlabel_label :: l -> a l -> a l
+  mlabel_join :: a l -> a l -> a l
+  mlabel_meet :: a l -> a l -> a l
+  mlabel_leq :: a l -> a l -> Bool
+  mextract :: a l -> l
+  mext_join :: a l -> l
+  mext_meet :: a l -> l
+  mlabel_tag :: a l -> l -> a l
+  mlabel_decl :: a l -> a l -> l -> a l
+\end{verbatim} 
+Type variable \co{a} is an abstract data type that represents a multiple lattice
+structure based on a lattice \co{l}.
+Security type \co{SecType} is an instance of \co{MultiLattice} and implements all
+class methods.
+Class method \co{mlabel\_top} and \co{mlabel\_bottom} accept any multiple lattice
+structure and produce top and bottom elements of the structure respectively.
+They are special cases of method \co{mlabel\_label} which produces an element in the
+same lattice as the second parameter but with all security label annotations being $l$.
+Method \co{mlabel\_join} and \co{mlabel\_meet} return the join and the meet of two
+elements in the same lattice respectively.
+Method \co{mlabel\_leq} implements the subtyping relation showed in 
+Figure~\ref{fig:subtyping}.
+Method \co{mextract} implements operator $e$ in Figure~\ref{fig:extract}. It returns 
+a lattice label that represents the security level of a information flow and is used
+to eliminate {\em implicit} flow.
+Class method \co{mext\_join}(\co{mext\_meet}, resp.) returns a lattice label which is
+the join(the meet, resp.) of label annotations inside of a complex security label. 
+Method \co{mlabel\_tag} implements operator $\tagup$ in Figure~\ref{fig:tagup} and
+method \co{mlabel\_decl} implements operator $\decl$ in Figure~\ref{fig:decl}. The 
+second complex security label of \co{mlabel\_decl} has identical constructors to the 
+first complex security label except when the first one is $\mathbf{high}$. Each label
+annotation in the second complex security label is the same as the third lattice 
+label.
+%\co{SecType} is an instance of \co{MultiLattice}. The following shows implementation
+%of constructor \co{Ref} as example(in Lattice.hs): 
+%\begin{verbatim}
+%instance Lattice l => MultiLattice SecType l where
+%  mlabel_label l (Ref t _) = Ref (mlabel_label l t) l
+%  mlabel_leq (Ref st1 lr1) (Ref st2 lr2) = 
+%    label_leq lr1 lr2 && mlabel_leq st1 st2
+%  mlabel_leq SecHigh (Ref st2 lr2) = 
+%    (label_leq label_top lr2) && (mlabel_leq SecHigh st2)
+%  mlabel_leq (Ref st1 lr1) SecHigh = 
+%    (label_leq lr1 label_top) && (mlabel_leq st1 SecHigh)
+%  mextract (Ref d l) = (mextract d) `label_join` l
+%  mextract (SecEither s t) = 
+%    (mextract s) `label_join` (mextract t)
+%  ...
+%\end{verbatim}
+%In method \co{mlabel\_label}, the resulting \co{Ref} applies \co{mlabel\_label} again
+%to obtain security label for its content and takes label \co{l} as its own identity.
+%To find order of two \co{Ref} security labels, labels of their identity are compared
+%and so are security labels of their contents. Every structure of \co{SecType} is in
+%partial order relation with constructor \co{SecHigh}. To compare with \co{SecHigh},
+%any field of lattice label is compared with \co{label\_top}, and \co{SecHigh} 
+%propagates to any field of multiple lattice label. Method \co{mextract} applying to
+%\co{Ref} returns the security label of its identity. One more interesting case is
+%when \co{mextract} applies to \co{SecEither}. Because \co{SecEither} is actually
+%a single value and aimed for a more accurate description of \co{Either} type, there 
+%is no single identity security label for \co{SecEither}. Flow security label of a
+%\co{SecEither} is thus to join two flow security labels of possible values.
+
+Programmers only need to define a lattice label to achieve their goals as in FlowHaskell. 
+Complex security type \co{SecType} is part of the security language and 
+maintained by library providers. Any new complex security label can be easily extended 
+in \co{SecType} by adding a new type constructor and implementations of the methods
+in \co{MultiLattice}. No change of code is required for old programs to 
+take advantage of new complex security labels.
+

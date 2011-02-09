@@ -1,0 +1,142 @@
+\begin{Verbatim}[fontsize=\footnotesize,frame=lines,
+                 framesep=5mm, label={[Lattice.hs]Lattice.hs}]
+
+module Lattice where
+
+class (Eq a, Show a) => Lattice a where
+  label_top :: a
+  label_bottom :: a
+  label_join :: a -> a -> a
+  label_meet :: a -> a -> a
+  label_leq :: a -> a -> Bool
+
+data TriLabel = LOW | MEDIUM | HIGH 
+		deriving (Eq, Show)
+
+instance Lattice TriLabel where
+  label_top = HIGH
+  label_bottom = LOW
+  label_join x y = if label_leq x y then y else x
+  label_meet x y = if label_leq x y then x else y
+  label_leq LOW _ = True
+  label_leq MEDIUM LOW = False
+  label_leq MEDIUM _ = True
+  label_leq HIGH HIGH = True
+  label_leq HIGH _ = False
+
+data Label l = Lab l | LVar String
+     deriving (Eq, Show)
+
+data SecType l = SecLabel (Label l) | SecRef (SecType l) (Label l) | 
+                 SecPair (SecType l) (SecType l) | SecHigh | 
+                 SecEither (SecType l) (SecType l) (Label l) | SecVar String 
+		deriving (Eq, Show)
+
+instance Lattice l => Ord (SecType l) where
+-- (<=)
+  (SecLabel (Lab l1)) <= (SecLabel (Lab l2)) = label_leq l1 l2
+  SecHigh <= (SecLabel (Lab l2)) = label_leq label_top l2
+  (SecLabel (Lab l1)) <= SecHigh = label_leq l1 label_top
+  (SecRef st1 (Lab lr1)) <= (SecRef st2 (Lab lr2)) = 
+                                  label_leq lr1 lr2 && (st1 <= st2) && (st2 <= st1)
+  SecHigh <= (SecRef st2 (Lab lr2)) = (label_leq label_top lr2) && (SecHigh <= st2)
+  (SecRef st1 (Lab lr1)) <= SecHigh = (label_leq lr1 label_top) && (st1 <= SecHigh)
+  (SecPair s1 t1) <= (SecPair s2 t2) = (s1 <= s2) && (t1 <= t2)
+  SecHigh <= (SecPair s2 t2) = (SecHigh <= s2) && (SecHigh <= t2)
+  (SecPair s1 t1) <= SecHigh = (s1 <= SecHigh) && (t1 <= SecHigh)
+  (SecEither s1 t1 (Lab l1)) <= (SecEither s2 t2 (Lab l2)) = 
+                                    (s1 <= s2) && (t1 <= t2) && label_leq l1 l2
+  (SecEither s1 t1 (Lab l1)) <= SecHigh = 
+                     (s1 <= SecHigh) && (t1 <= SecHigh) && label_leq l1 label_top
+  SecHigh <= (SecEither s1 t1 (Lab l2)) = 
+                     (SecHigh <= s1) && (SecHigh <= t1) && label_leq label_top l2
+  t1 <= t2 = error $ "undefined relation : " ++ (show t1) ++ " and " ++ (show t2) 
+-- max
+  max (SecLabel (Lab l1)) (SecLabel (Lab l2)) = SecLabel (Lab (label_join l1 l2))
+  max (SecRef t1 (Lab l1)) (SecRef t2 (Lab l2)) = 
+                           if t1 /= t2
+                             then error $ "SecRef : no join defined."
+                             else SecRef t1 (Lab (label_join l1 l2))
+  max (SecPair s1 t1) (SecPair s2 t2) = SecPair (max s1 s2) (max t1 t2)
+  max SecHigh SecHigh = SecHigh
+  max (SecEither s1 t1 (Lab l1)) (SecEither s2 t2 (Lab l2)) = 
+                     SecEither (max s1 s2) (max t1 t2) (Lab (label_join l1 l2))
+-- min
+  min (SecLabel (Lab l1)) (SecLabel (Lab l2)) = SecLabel (Lab (label_meet l1 l2))
+  min (SecRef t1 (Lab l1)) (SecRef t2 (Lab l2)) = 
+                          if t1 /= t2
+                            then error $ "SecRef : no meet defined."
+                            else SecRef t1 (Lab (label_meet l1 l2))
+  min (SecPair s1 t1) (SecPair s2 t2) = SecPair (min s1 s2) (min t1 t2)
+  min SecHigh SecHigh = SecHigh
+  min (SecEither s1 t1 (Lab l1)) (SecEither s2 t2 (Lab l2)) =
+                SecEither (min s1 s2) (min t1 t2) (Lab (label_meet l1 l2))
+
+ml_label :: Lattice l => l -> SecType l -> SecType l
+ml_label l (SecLabel _) = SecLabel (Lab l)
+ml_label l (SecRef t _) = SecRef t (Lab l)
+ml_label l (SecPair t1 t2) = SecPair (ml_label l t1) (ml_label l t2)
+ml_label l SecHigh = SecHigh
+ml_label l (SecEither t1 t2 _) = SecEither (ml_label l t1) (ml_label l t2) (Lab l)
+
+mextract :: Lattice l => SecType l -> l
+mextract (SecLabel (Lab l)) = l
+mextract (SecRef s (Lab l)) = l
+mextract (SecPair s t) = (mextract s) `label_join` (mextract t)
+mextract SecHigh = label_top
+mextract (SecEither s t (Lab l)) = l
+mext_join s = propLeaf ext label_join s
+mext_meet s = propLeaf ext label_meet s
+
+ml_tag :: Lattice l => SecType l -> l -> SecType l
+ml_tag (SecLabel _) l = SecLabel (Lab l)
+ml_tag (SecRef s _) l = SecRef s (Lab l)
+ml_tag (SecPair s1 s2) l = SecPair (ml_tag s1 l) (ml_tag s2 l)
+ml_tag (SecEither s1 s2 _) l = SecEither (ml_tag s1 l) (ml_tag s2 l) (Lab l)
+ml_tag SecHigh l = SecHigh
+
+ml_decl :: Lattice l => SecType l -> SecType l -> l -> SecType l
+ml_decl SecHigh s_out l = s_out
+ml_decl (SecLabel (Lab l1)) _ l = SecLabel (Lab (if label_leq l1 l then l1 else l))
+ml_decl (SecRef s (Lab l1)) (SecRef s' _) l = 
+                   SecRef (ml_decl s s' l) (Lab (if label_leq l1 l then l1 else l))
+ml_decl (SecPair s1 s2) (SecPair s1' s2') l = 
+                   SecPair (ml_decl s1 s1' l) (ml_decl s2 s2' l)
+ml_decl (SecEither s1 s2 (Lab l1)) (SecEither s1' s2' _) l =
+              SecEither (ml_decl s1 s1' l) (ml_decl s2 s2' l) 
+                        (Lab (if label_leq l1 l then l1 else l))
+
+ml_eqstruct :: Lattice l => SecType l -> SecType l -> Bool
+ml_eqstruct (SecLabel _) (SecLabel _) = True
+ml_eqstruct (SecRef s1 _) (SecRef s2 _) = ml_eqstruct s1 s2
+ml_eqstruct (SecPair s1 t1) (SecPair s2 t2) = 
+                      ml_eqstruct s1 s2 && ml_eqstruct t1 t2
+ml_eqstruct (SecEither s1 t1 _) (SecEither s2 t2 _) = 
+                      ml_eqstruct s1 s2 && ml_eqstruct t1 t2
+ml_eqstruct _ _ = False
+
+ext (SecLabel (Lab l)) = l
+ext SecHigh = label_top
+
+-- Check if a (SecType l) contains certain property at leaf 
+-- f   : a property function applied to leaves
+-- con : a combinator for the result of f
+propLeaf :: (SecType l -> a) -> (a -> a -> a) -> SecType l -> a
+propLeaf f con v@(SecVar _) = f v
+propLeaf f con v@(SecHigh) = f v
+propLeaf f con v@(SecLabel _) = f v
+propLeaf f con (SecRef t l) = (propLeaf f con t) `con` (f (SecLabel l))
+propLeaf f con (SecPair t1 t2) = (propLeaf f con t1) `con` (propLeaf f con t2)
+propLeaf f con (SecEither t1 t2 l) = (propLeaf f con t1) `con` 
+                                     (propLeaf f con t2) `con` (f (SecLabel l))
+
+class Lattice l => Guard a l where
+  label_guard :: a l -> a l -> Bool
+  label_gsleql :: a l -> a l -> Bool
+  label_glleqs :: a l -> a l -> Bool
+
+instance Lattice l => Guard SecType l where
+  label_guard (SecLabel (Lab l)) s = label_leq l (mextract s)
+  label_gsleql s (SecLabel (Lab l)) = label_leq (mext_join s) l
+  label_glleqs (SecLabel (Lab l)) s = label_leq l (mext_meet s)
+\end{Verbatim}

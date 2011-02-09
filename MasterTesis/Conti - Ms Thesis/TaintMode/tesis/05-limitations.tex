@@ -1,0 +1,153 @@
+
+\section{Scope of the library}
+
+In Figure \ref{fig:generate}, 
+the method to automatically produce \nametklass classes does not 
+work with booleans. 
+The reason for that is that class \texttt{bool}
+cannot be subclassed in Python 
+\footnote{\url{http://docs.python.org/library/functions.html#bool}}.
+%This restriction seems to be an arbitrary decision and we could 
+%not find technical reasons to justify it. 
+Consequently, our library
+cannot handle tainted boolean values. We argue that 
+this shortcoming does not restrict the usability of the library for
+ two reasons. Firstly, different from previous approaches 
+\cite{Perl,Nguyen05,Jovanovic06pixy:a,KozlovPetukhov07,Futo07,SeoLam2010}, 
+the library can provide taint analysis for several 
+built-in types rather than just strings. Secondly, we consider that 
+booleans are typically used on guards. 
+Since the library already ignores implicit flows, 
+the possibilities to find vulnerabilities
+are not drastically reduced by disregarding taint information on booleans.
+% Not sure about this:
+% Moreover, implicit 
+% flows can be produced by having boolean expressions and 
+% short-circuit evaluation as the 
+% semantics for boolean operators. For instance, An implicit 
+% flow can be represented as the boolean expression
+% \texttt{(not ( x == taint('a') ) or 'a')}. 
+% This expression evaluates to \texttt{True} if
+% \texttt{x == 'a'}. Otherwise, it evaluates to \texttt{'a'}.
+
+When generating the taint-aware
+class \texttt{STR} (Figure \ref{fig:factory}), 
+we found some problems 
+when dealing with   
+%we discover that the Python interpreter
+%\footnote{CPython, version 2.6.x} forbids 
+%to redefine 
+some methods from the class \texttt{str}. 
+Python interpreter raises exceptions when  
+methods 
+\texttt{\_\_nonzero\_\_},
+\texttt{\_\_reduce\_\_}, and 
+\texttt{\_\_reduce\_ex\_\_} are redefined.
+Moreover, 
+when methods  
+\texttt{\_\_new\_\_}, \texttt{\_\_init\_\_}, 
+\texttt{\_\_getattribute\_\_},  
+%\texttt{\_\_cmp\_\_},  
+%\texttt{\_\_nonzero\_\_},
+and 
+\texttt{\_\_repr\_\_}
+%\texttt{\_\_reduce\_\_}, and 
+%\texttt{\_\_reduce\_ex\_\_}. 
+are redefined by function \texttt{taint\_class},
+an infinite recursion is produced when calling any of them.
+As for \texttt{STR}, the generation of the \nametklass 
+class \texttt{INT} exposes the same behavior, i.e. the 
+methods mentioned before produce the same problems.
+We argue 
+that this restriction does not drastically impact on the capabilities to 
+detect vulnerabilities.
+%Methods named among underscores  
+%are sinvoked by special syntax rather than explicitly 
+%\footnote{\url{http://docs.python.org/reference/datamodel.html#specialnames}}. 
+Methods \texttt{\_\_new\_\_} 
+is called 
+when creating objects.
+In Figure \ref{fig:generate}, \nametklass 
+classes define this method 
+on line 3.
+Method \texttt{\_\_init\_\_} is called when 
+initializing objects.  
+Python invokes this method  after an object is created 
+and programs do not usually called it explicitly.
+Method \texttt{\_\_getattribute\_\_}
+is used to access any attribute on a class.
+This method is automatically inherited from 
+\texttt{klass} and it works as expected for 
+\nametklass classes.
+%defined by 
+%Python when setting up classes.
+%Thus, 
+%method \texttt{\_\_getattribute\_\_} 
+%is defined for  
+%\texttt{STR} when the class is created.
+%Method \texttt{\_\_cmp\_\_} is applied to compare
+%objects. 
+Method \texttt{\_\_nonzero\_\_} is called when 
+objects need to be converted into a boolean value.
+%Similarly to bools, 
+As mentioned before, the
+analysis ignores taint information of data 
+that is typically used on guards. 
+Method \texttt{\_\_repr\_\_} pretty prints  
+objects on the screen. 
+In principle, developers should be careful 
+to not use calls to \texttt{\_\_repr\_\_} in order to 
+convert tainted objects into untainted ones. 
+However, this method is typically used for debugging 
+\footnote{\url{http://docs.python.org/reference/datamodel.html}}.
+Methods \texttt{\_\_reduce\_\_} and \texttt{\_\_reduce\_ex\_\_}
+are used by Pickle \footnote{An special Python module} to serialize strings. 
+Given these facts, 
+the argument \texttt{method} in function \texttt{taint\_class} 
+establishes the methods to be redefined on taint-aware classes
+(Figure \ref{fig:generate}).
+This argument is also useful when
+the built-in classes might 
+vary among different Python interpreters.
+%different versions of Python differ on the methods provided by 
+%the built-in classes .
+It is future work 
+to automatically determine the lists of methods to be redefined for different 
+built-in classes and different versions of Python.
+
+%% Connecting functions
+It is up to the users of the library 
+to decide which built-in classes and functions must be
+taint-aware. This attitude comes from the need of being flexible 
+and not affecting performance unless it is necessary. 
+Why users interested on 
+taint analysis for strings should accept 
+run-time overheads due to tainted integers? 
+
+
+%%% Taint marks lost!
+It is important to remark that the library only tracks taint information 
+in the source code being developed. As a consequence, 
+taint information could be lost if, for example, 
+taint values are given to external 
+libraries (or libraries written in other languages)
+that are not taint-aware. 
+One way to tackle this problem is to augment the library 
+functions to be taint-aware by applying \texttt{propagate\_func} to them. 
+ 
+
+As a future work, we will explore if 
+%defining 
+%some \nametklass classes, 
+it is possible to automatically 
+define \namefunc functions 
+based on the built-in functions (found in the 
+interpreter) and \nametklass classes in order to 
+increase the number of \nametklass functions provided by the library.
+At the moment, the library provides 
+\nametklass classes for
+strings, integers, floats, and unicode as well as some 
+\namefunc functions (e.g. \texttt{len}, \texttt{chr}, 
+and \texttt{ord}). 
+
+\section{The \% operator problem}

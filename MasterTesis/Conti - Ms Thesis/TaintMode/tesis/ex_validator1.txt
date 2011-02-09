@@ -1,0 +1,20 @@
+>>> @validator(XSS, True, [0])
+... def is_digit(n):
+...     if len(n) != 1:
+...         return False
+...     return n in "0123456789"
+...
+>>> t1 = taint('1', XSS)
+>>> t2 = taint('a', XSS)
+>>> tainted(t1)
+True
+>>> tainted(t2)
+True
+>>> is_digit(t1)
+True
+>>> tainted(t1)
+False
+>>> is_digit(t2)
+False
+>>> tainted(t2)
+True

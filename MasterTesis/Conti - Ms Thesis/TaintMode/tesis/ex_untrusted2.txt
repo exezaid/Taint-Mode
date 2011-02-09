@@ -1,0 +1,7 @@
+>>> def values_from_outside(stream):
+...     return stream.read()
+... 
+>>> values_from_outside = untrusted(values_from_outside)
+>>> v = values_from_outside(f)
+>>> tainted(v)
+True

@@ -1,0 +1,12 @@
+eval = ssink(T)(eval)
+
+@ssink(T)
+def f(...) : 
+    ...
+
+w = cleaner(T)(wash)
+
+@cleaner(T)
+def f(...) :
+    ...
+ 

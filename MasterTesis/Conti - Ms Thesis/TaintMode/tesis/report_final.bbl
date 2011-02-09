@@ -1,0 +1,140 @@
+\begin{thebibliography}{10}
+
+\bibitem{Django}
+{Django} web framework.
+\newblock \url{http://www.djangoproject.com}.
+
+\bibitem{WikiPython}
+List of {P}ython software.
+\newblock \url{http://en.wikipedia.org/wiki/List_of_Python_software}.
+
+\bibitem{Perl}
+The {Perl} programming language.
+\newblock \url{http://www.perl.org/}.
+
+\bibitem{Python}
+The {Python} programming language.
+\newblock \url{http://www.python.org/}.
+
+\bibitem{Ruby}
+The {Ruby} programming language.
+\newblock \url{http://www.ruby-lang.org/en/}.
+
+\bibitem{Twisted}
+The {Twisted} programming framework.
+\newblock \url{http://twistedmatrix.com/trac/}.
+
+\bibitem{StateWebSecurity}
+M.~Andrews.
+\newblock Guest {E}ditor's {I}ntroduction: {T}he {S}tate of {W}eb {S}ecurity.
+\newblock {\em IEEE Security and Privacy}, 4(4):14--15, 2006.
+
+\bibitem{BekmanCholet2003}
+S.~Bekman and E.~Cholet.
+\newblock {\em Practical mod\_perl}.
+\newblock {O'R}eilly and {A}ssociates, 2003.
+
+\bibitem{IntroductionFunctional}
+R.~Bird and P.~Wadler.
+\newblock {\em An introduction to functional programming}.
+\newblock Prentice Hall International (UK) Ltd., 1988.
+
+\bibitem{PythonLib}
+J.~J. Conti and A.~Russo.
+\newblock {A Taint Mode for Python via a Library}.
+\newblock Software release. \url{http://www.cse.chalmers.se/~russo/juanjo.htm},
+  Apr. 2010.
+
+\bibitem{Denning:Denning:Certification}
+D.~E. Denning and P.~J. Denning.
+\newblock Certification of programs for secure information flow.
+\newblock {\em Comm. of the ACM}, 20(7):504--513, July 1977.
+
+\bibitem{FFAWebSecurity}
+{Federal Aviation Administration (US)}.
+\newblock {Review of Web Applications Security and Intrusion Detection in Air
+  Traffic Control Systems}.
+\newblock
+  \url{http://www.oig.dot.gov/sites/dot/files/pdfdocs/ATC_Web_Report.pdf}, June
+  2009.
+\newblock Note: thousands of vulnerabilities were discovered.
+
+\bibitem{Futo07}
+A.~Futoransky, E.~Gutesman, and A.~Waissbein.
+\newblock {A dynamic technique for enhancing the security and privacy of web
+  applications}.
+\newblock In {\em {Black Hat USA Briefings}}, Aug. 2007.
+
+\bibitem{Haldar05dynamictaint}
+V.~Haldar, D.~Chandra, and M.~Franz.
+\newblock {Dynamic Taint Propagation for Java}.
+\newblock In {\em {Proceedings of the 21st Annual Computer Security
+  Applications Conference}}, pages 303--311, 2005.
+
+\bibitem{WebSSARI}
+Y.~Huang, F.~Yu, C.~Hang, C.~Tsai, D.~Lee, and S.~Kuo.
+\newblock Securing web application code by static analysis and runtime
+  protection.
+\newblock In {\em {Proceedings of the 13th International Conference on World
+  Wide Web}}, pages 40--52. ACM, 2004.
+
+\bibitem{Jovanovic06pixy:a}
+N.~Jovanovic, C.~Kruegel, and E.~Kirda.
+\newblock {Pixy: A Static Analysis Tool for Detecting Web Application
+  Vulnerabilities (Short Paper)}.
+\newblock In {\em {2006 IEEE Symposium on Security and Privacy}}, pages
+  258--263. {IEEE Computer Society}, 2006.
+
+\bibitem{KozlovPetukhov07}
+D.~Kozlov and A.~Petukhov.
+\newblock {Implementation of Tainted Mode approach to finding security
+  vulnerabilities for Python technology}.
+\newblock In {\em Proc. of Young Researchers' Colloquium on Software
+  Engineering ({SYRCoSE})}, June 2007.
+
+\bibitem{Lutz:1999:LP}
+M.~Lutz and D.~Ascher.
+\newblock {\em Learning {Python}}.
+\newblock O'Reilly \& Associates, Inc., 1999.
+
+\bibitem{Nguyen05}
+A.~Nguyen-{T}uong, S.~Guarnieri, D.~Greene, J.~Shirley, and D.~Evans.
+\newblock {Automatically Hardening Web Applications Using Precise Tainting}.
+\newblock In {\em In 20th {IFIP} {I}nternational {I}nformation {S}ecurity
+  {C}onference}, pages 372--382, 2005.
+
+\bibitem{Russo:IOS}
+A.~Russo, A.~Sabelfeld, and K.~Li.
+\newblock Implicit flows in malicious and nonmalicious code.
+\newblock {\em 2009 {M}arktoberdorf {S}ummer {S}chool ({IOS} {P}ress)}, 2009.
+
+\bibitem{Sabelfeld:Myers:JSAC}
+A.~Sabelfeld and A.~C. Myers.
+\newblock Language-based information-flow security.
+\newblock {\em IEEE J. Selected Areas in Communications}, 21(1):5--19, Jan.
+  2003.
+
+\bibitem{Sabelfeld:Russo:PSI09}
+A.~Sabelfeld and A.~Russo.
+\newblock {From dynamic to static and back: Riding the roller coaster of
+  information-flow control research}.
+\newblock In {\em Proc. Andrei Ershov International Conference on Perspectives
+  of System Informatics}, LNCS. Springer-Verlag, June 2009.
+
+\bibitem{SeoLam2010}
+J.~Seo and M.~S. Lam.
+\newblock {InvisiType: Object-Oriented Security Policies}.
+\newblock In {\em {17th Annual Network and Distributed System Security
+  Symposium}}. Internet Society (ISOC), Feb. 2010.
+
+\bibitem{thomas2004prub}
+D.~Thomas, C.~Fowler, and A.~Hunt.
+\newblock {\em {Programming Ruby. The Pragmatic Programmer's Guide}}.
+\newblock {Pragmatic Programmers}, 2004.
+
+\bibitem{OWASP:Top10:2010}
+J.~Williams and D.~Wichers.
+\newblock {OWASP Top} 10 2010.
+\newblock \url{http://www.owasp.org/index.php/Top_10_2010}, 2010.
+
+\end{thebibliography}

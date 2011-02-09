@@ -1,0 +1,98 @@
+A way to face these problems is using Taint Analysis. Usually enforcesd 
+
+Data received from a client is considerer tainted. We can't trust in data from the outside because we don't know who generate it. May be a real user, maybe an attacker or even an attacker program. 
+
+Tainted data can be untainted by a sanitization process.
+
+We don't want tainted data to reach sensitive sinks.
+
+In the image you can see different sanitization processes represented with different colors. This means that data that will finish in different sinks needs to be properly cleaned for that kind of sink.
+
+It's not the same the function you'll use to protect a page renderer against XSS than the DB against SQLI.
+
+% Taint analsys
+%A 
+Taint analysis is an automatic approach to find vulnerabilities.
+Intuitively, taint analysis restricts how tainted or untrustworthy 
+data flow inside programs. Specifically, it constrains data 
+to be untainted (trustworthy) 
+or previously sanitized when 
+reaching sensitive sinks. 
+%In a web scenario, 
+%user input is frequently considered as tainted, while 
+%HTTP-request, SQL queries, and other security critical operations 
+%are classified as sensitive sinks. 
+Perl was the first scripting 
+language to provide taint analysis 
+as an special mode of the  
+interpreter called \emph{taint mode} \cite{BekmanCholet2003}. 
+Similar to Perl, some interpreters for 
+ Ruby \cite{thomas2004prub}, PHP \cite{Nguyen05}, and 
+recently Python \cite{KozlovPetukhov07} have been 
+carefully modified to provide taint modes.
+Adapting interpreters to incorporate taint analysis 
+present two major drawbacks that directly 
+impact on the adoption of this technology. 
+Firstly, incorporating taint analysis into an interpreter 
+might be a major task in its own right. Secondly, it is 
+very probably that it is necessary to repeatedly adapt an  
+interpreter at every new version or release of it.
+
+
+\begin{wrapfigure}{r}{6.5cm}
+%\begin{figure}[t]
+\vspace{-25pt}
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{email.py}
+\caption{\label{fig:example}Code for \texttt{email.py}}
+}}
+\vspace{-15pt}
+%\end{figure}
+\end{wrapfigure}
+%%% Solution / Contributions
+Rather than modifying interpreters, we present how to provide
+a taint mode for Python via a library written entirely in Python. 
+Python is spreading fast inside
+web development \cite{WikiPython}. 
+%For instance, 
+%the popular Wiki engine 
+%MoinMoin (e.g. used by Ubuntu forums)
+%and Youtube are mostly written in Python.  Among companies, 
+%we can mention Google, which uses 
+%the language for some of its search-engine internals at
+%Google Groups, Gmail, and Google Maps.
+Besides its successful use, Python presents 
+some programming languages abstractions that makes possible 
+to provide a taint mode via a library. For example, 
+Python decorators \cite{Lutz:1999:LP} are a non-invasive and simple 
+manner to declare sources of tainted data, sensitive sinks, and 
+sanitation functions. Python's 
+object-oriented and dynamic typing mechanisms allows the 
+execution of the taint analysis with almost no modifications in the
+source code. 
+%\marginpar{Check later what about decorating Bool} 
+
+
+The library provides a general method to enhance Python's built-in
+classes with tainted values. 
+%To demostrate the flexibility of our approach, 
+%the library enhances the built-in classes for
+%strings, integers, and floats. 
+In general, taint
+analysis tends to only consider strings or characters 
+\cite{Perl,Nguyen05,Haldar05dynamictaint,KozlovPetukhov07,Futo07,SeoLam2010}.
+% when 
+%implemented as part of interpreters. 
+In contrast, our library 
+can be easily adapted to consider different built-in
+classes
+% as well as users' specific ones, 
+and thus providing a taint
+analysis for a wider set of data types. 
+By only considering tainted strings, the library provides 
+a similar analysis than in \cite{KozlovPetukhov07},
+but without modifying the Python interpreter.
+To the best of our knowledge, a
+library for taint analysis has not been considered before. 
+
+\section{Related work}

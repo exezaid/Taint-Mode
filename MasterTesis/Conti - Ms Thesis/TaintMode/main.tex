@@ -1,0 +1,1251 @@
+\documentclass[oribibl]{llncs}
+\usepackage{times}
+\usepackage{stmaryrd,latexsym,amsmath,amssymb}
+%\usepackage{proof}
+\usepackage{wrapfig}
+\usepackage{url}
+\usepackage{semantic} % \inference
+\usepackage{mathpartir} % display of inference rules
+\usepackage{enumerate}
+\usepackage{listings}
+  
+\input{declarations}
+\pagestyle{plain}
+
+\title{A Taint Mode for Python via a Library}
+
+\newcommand{\nametklass}{taint-aware }
+\newcommand{\nameTklass}{Taint-aware }
+\newcommand{\namefunc}{taint-aware }
+\institute{
+Universidad Tecnol\'{o}gica Nacional, Facultad Regional Santa Fe, Argentina \and 
+Chalmers University of Technology, Sweden
+}
+
+\author{Juan Jos\'{e} Conti\inst{1} \and  Alejandro Russo\inst{2}}
+
+
+%\author{[Anonymized for AppSec 2010]}
+%\institute{\vspace{-5ex}}
+
+\newif\ifexpandproofs
+\expandproofsfalse
+
+
+\begin{document}
+\lstset{
+        %language=Python, 
+        stringstyle=\ttfamily, 
+        showstringspaces=false,
+        extendedchars=true,  
+}
+
+%\lstdefinelanguage{Python}
+%{morekeywords={cat,python,rm}}
+
+
+\maketitle
+\thispagestyle{plain}
+
+
+
+
+\begin{abstract}
+Vulnerabilities in web applications present threats to on-line systems.
+SQL injection and cross-site scripting attacks are among the
+most common threats found nowadays. These attacks are
+often result of improper or none input validation. 
+To help discover such vulnerabilities, 
+popular web scripting 
+languages like Perl, Ruby, PHP, 
+and Python perform taint analysis.
+Such analysis is often 
+implemented as an execution monitor, where the interpreter
+needs to be adapted to provide a taint mode. 
+% The analysis is usually implemented using an static (e.g. type
+% systems) or dynamic (e.g. execution monitors) techniques. 
+% In the latter case, the Perl, Ruby, PHP, and Python interpreters have
+% been adapted to provide a taint mode. 
+However, modifying interpreters might be a major task in its own
+right. In fact, it is very probably that  
+new releases of interpreters require to 
+be adapted to provide a taint mode.
+% where the analysis is performed. 
+Differently from previous approaches, 
+we show how to provide taint analysis for Python via a library
+ written entirely in Python, and thus avoiding modifications in the interpreter.
+The concepts of classes, decorators and dynamic dispatch
+makes our solution lightweight, easy to use, and particularly neat.
+With minimal or none effort, the library can be adapted
+to work with different Python interpreters.
+\end{abstract}
+ 
+% 2 Page
+\section{Introduction}
+\label{sec:intro}
+
+%% Situation: web applications widely use and no security still
+Over the past years, there has been a significant increase 
+%on the 
+%tasks or activities performed on-line. 
+on the number of activities performed on-line.
+Users can do almost everything  
+using a web browser (e.g. 
+watching videos, listening to music, banking, booking flights, planing 
+trips, etc). Considering the size of Internet and its number of users, 
+%the amount of 
+%people that use it, 
+web applications are probably among the most used pieces of
+software nowadays.
+%in our modern society. 
+Despite its wide use, web applications suffer 
+from vulnerabilities that permit attackers to 
+steal confidential data, break integrity of systems, 
+and affect availability of services. 
+When development of web applications is done 
+with little or no
+security in mind,  
+the presence of security holes increases dramatically.
+Web-based vulnerabilities have already  
+outplaced those of all other platforms 
+\cite{StateWebSecurity} 
+and there are 
+no reasons to think that this tendency has changed
+\cite{FFAWebSecurity}.
+
+%% Top attacks 
+According to OWASP \cite{OWASP:Top10:2007}, 
+cross-site scripting (XSS) and SQL injection (SQLI) attacks are among 
+the most common vulnerabilities on web applications.
+Although these attacks are classified differently, they are produced 
+by the same 
+reason: \emph{user supplied data is sent to sensitive sinks 
+without a proper sanitation}.
+For example, 
+when a SQL query is constructed using an unsanitize string provided by a user, 
+SQL injection attacks are likely to occur.
+%, where the sensitive
+%sink is the database engine. 
+To harden applications against these attacks, 
+the implementations of some popular web scripting languages 
+%(Perl, Ruby, PHP,  and Python) 
+perform taint analysis in a form 
+of execution monitors \cite{Perl,Ruby}. In that manner, not only run 
+interpreters code, but they also perform security checks. Taint
+analysis can also be provided through static analysis \cite{WebSSARI,Jovanovic06pixy:a}. 
+Nevertheless, execution monitors usually produce
+less false alarms 
+than traditional static techniques
+\cite{Sabelfeld:Russo:PSI09}. 
+%In other words, 
+%execution monitors are likely to be more precise than traditional static techniques. 
+In particular, static techniques cannot  
+deal with dynamic code evaluation
+%a common feature present in web
+%scripting languages,  
+without being too conservative. Most of the modern web scripting 
+languages are capable to dynamically execute code. 
+In this paper, we focus on dynamic techniques.
+
+
+
+
+% Taint analsys
+%A 
+Taint analysis is an automatic approach to find vulnerabilities.
+Intuitively, taint analysis restricts how tainted or untrustworthy 
+data flow inside programs. Specifically, it constrains data 
+to be untainted (trustworthy) 
+or previously sanitized when 
+reaching sensitive sinks. 
+%In a web scenario, 
+%user input is frequently considered as tainted, while 
+%HTTP-request, SQL queries, and other security critical operations 
+%are classified as sensitive sinks. 
+Perl was the first scripting 
+language to provide taint analysis 
+as an special mode of the  
+interpreter called \emph{taint mode} \cite{BekmanCholet2003}. 
+Similar to Perl, some interpreters for 
+ Ruby \cite{thomas2004prub}, PHP \cite{Nguyen05}, and 
+recently Python \cite{KozlovPetukhov07} have been 
+carefully modified to provide taint modes.
+Adapting interpreters to incorporate taint analysis 
+present two major drawbacks that directly 
+impact on the adoption of this technology. 
+Firstly, incorporating taint analysis into an interpreter 
+might be a major task in its own right. Secondly, it is 
+very probably that it is necessary to repeatedly adapt an  
+interpreter at every new version or release of it.
+
+
+\begin{wrapfigure}{r}{6.5cm}
+%\begin{figure}[t]
+\vspace{-25pt}
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{email.py}
+\caption{\label{fig:example}Code for \texttt{email.py}}
+}}
+\vspace{-15pt}
+%\end{figure}
+\end{wrapfigure}
+%%% Solution / Contributions
+Rather than modifying interpreters, we present how to provide
+a taint mode for Python via a library written entirely in Python. 
+Python is spreading fast inside
+web development \cite{WikiPython}. 
+%For instance, 
+%the popular Wiki engine 
+%MoinMoin (e.g. used by Ubuntu forums)
+%and Youtube are mostly written in Python.  Among companies, 
+%we can mention Google, which uses 
+%the language for some of its search-engine internals at
+%Google Groups, Gmail, and Google Maps.
+Besides its successful use, Python presents 
+some programming languages abstractions that makes possible 
+to provide a taint mode via a library. For example, 
+Python decorators \cite{Lutz:1999:LP} are a non-invasive and simple 
+manner to declare sources of tainted data, sensitive sinks, and 
+sanitation functions. Python's 
+object-oriented and dynamic typing mechanisms allows the 
+execution of the taint analysis with almost no modifications in the
+source code. 
+%\marginpar{Check later what about decorating Bool} 
+
+
+The library provides a general method to enhance Python's built-in
+classes with tainted values. 
+%To demostrate the flexibility of our approach, 
+%the library enhances the built-in classes for
+%strings, integers, and floats. 
+In general, taint
+analysis tends to only consider strings or characters 
+\cite{Perl,Nguyen05,Haldar05dynamictaint,KozlovPetukhov07,Futo07,SeoLam2010}.
+% when 
+%implemented as part of interpreters. 
+In contrast, our library 
+can be easily adapted to consider different built-in
+classes
+% as well as users' specific ones, 
+and thus providing a taint
+analysis for a wider set of data types. 
+By only considering tainted strings, the library provides 
+a similar analysis than in \cite{KozlovPetukhov07},
+but without modifying the Python interpreter.
+To the best of our knowledge, a
+library for taint analysis has not been considered before. 
+
+
+
+% 1 Page
+\subsection{A motivating example}
+\label{sec:example} 
+%
+%
+%
+%
+\begin{figure}[t]
+{\small{
+\lstinputlisting[numbers=left, numberstyle=\tiny,language=Python,stringstyle=\ttfamily]{uses.txt}
+\caption{\label{fig:uses} Different invocations for \texttt{email.py}}
+}}
+\end{figure}
+
+
+We present an example to motivate the use of 
+taint analysis in order to discover and repair 
+vulnerabilities. 
+The example considers an scenario of a web application
+where users can send their remotely stored files by 
+email.
+Figure \ref{fig:example} shows the simple module \texttt{email.py}
+that is responsible to perform such task.
+For simplicity,
+% and didactic purposes, 
+the code takes the user input from the 
+command line (lines 4 and 5) rather than from 
+the web server.
+%In a more realistic scenario, lines 4--8 would be part
+%of a bigger piece of code rather than an small module.
+Figure \ref{fig:uses} shows some invocations to the module from the
+shell prompt. Line 1 shows a request from 
+Alice to send her own file $\texttt{reportJanuary.xls}$ to 
+her email address $\texttt{alice@domain.se}$. In this case, 
+Alice's input produces a behavior which matches the 
+intention of the module. 
+In contrast, lines 2 and 3 show how attackers can 
+provide particular inputs to exploit unintended 
+or unforeseen behaviors of \texttt{email.py}.
+%the module that were not intended or foreseen.
+%More specifically, 
+Line 2 exploits the fact that \texttt{email.py} 
+was written assuming that 
+users only request their own files. 
+Observe how  
+\texttt{devil@evil.com} gets information regarding 
+users accounts by receiving the file \texttt{/etc/passwd}. 
+%in his/her mailbox. 
+Line 3 goes an step further 
+and injects the command \texttt{rm -rf /} after sending the email.
+%Observe that line 2 triggers the execution of 
+%the command \texttt{mail -s "Re: your file" devil@evil.com  <
+%  /etc/passwd ; rm -r  /} . 
+These attacks demonstrate how, 
+what was intended to be a simple email client,  
+can become a web-based file browser or a terminal. To avoid 
+these vulnerabilities, applications need to rigorously check 
+for malicious data provided by users or any other 
+untrustworthy source. 
+Taint analysis helps to detect when 
+data is not sanitize before it is used on security critical 
+operations. In Section \ref{sec:secure:email}, we show how to harden 
+\texttt{email.py} in order to reject the vulnerabilities 
+shown in Figure \ref{fig:example}.
+%data before it is used for
+%security critical operations. 
+%In the example above, our 
+%library detects that variable \texttt{cmd} is tainted since it is 
+%form from user input. As a result, 
+%the security critical call to \texttt{os.system} cannot be executed 
+%without introducing some procedure for sanitization. 
+%In order for the 
+%analysis to run, the code needs to be slightly marked with the 
+% API of our library.
+
+
+  
+
+ 
+The paper is organized as follows.
+%in the following way:
+%Section \ref{sec:example}
+%presents a motivating example for taint analysis.  
+Section \ref{sec:library} outlines the library API.
+Section \ref{sec:implementation} 
+describes the most important implementation details of our approach.
+Section \ref{sec:related} covers related work.  
+Section \ref{sec:conclusions} provides some 
+concluding remarks. 
+
+
+
+
+
+
+% 2 Pages
+\section{A library for taint analysis}
+\label{sec:library}
+
+%\begin{figure}[t]
+\begin{wrapfigure}{r}{4.5cm}
+\vspace{-30pt}
+{\small{
+\lstinputlisting[language=Python]{implicit.py}
+\caption{\label{fig:implicit}An implicit flow}
+}}
+\vspace{-20pt}
+\end{wrapfigure}
+%\end{figure}
+
+%%% Intro
+
+
+%% Idea of taint analysis
+On most situations, taint analysis %\cite{Perl,Ruby} 
+propagates 
+taint information on assignments.  
+Intuitively, when the right-hand side of an assignment uses a tainted value, 
+the variable appearing on the left-hand side becomes tainted.
+%For instance, given that the strings  
+%\texttt{t} and \texttt{u} are respectively tainted and untainted, 
+% variable $\texttt{z}$ becomes tainted if
+%$\texttt{z = t+u}$.
+Taint analysis can be seen as an information-flow tracking 
+mechanism for integrity \cite{Sabelfeld:Myers:JSAC}. 
+In fact, taint analysis is just a mechanism to 
+track explicit flows, i.e. direct flows of information 
+from one variable to another. 
+Taint analysis tends to ignore 
+implicit flows \cite{Denning:Denning:Certification}, i.e. 
+flows through the control-flow constructs of the language. 
+Figure \ref{fig:implicit} presents an implicit 
+flow. Variables \texttt{t} and \texttt{u} are 
+tainted and untainted, respectively.
+%, respectively. 
+Observe that variable \texttt{u} 
+is untainted after the execution of the branch since 
+an untainted value ($\texttt{'a'}$ or
+$\texttt{''}$) is assigned to it. Yet, the value of the tainted variable 
+$\texttt{t}$ is copied into the untainted variable 
+\texttt{u} when \texttt{t == 'a'}. 
+It is not difficult to imagine 
+programs that circumvent the taint analysis by
+copying the content of tainted strings 
+into untainted ones  by using implicit flows\cite{Russo:IOS}.
+%Besides However, 
+%taint analyses are still useful under certain circumstances.
+
+
+%, which circumvents the taint analysis.
+%Nevertheless, taint analyses are still useful under certain attacker 
+%models. 
+
+In scenarios where attackers has full control over the code 
+(e.g. when the code is potentially malicious), implicit flows present
+an effective way to circumvent the taint
+analysis. In this case, the attackers' goal  is to craft the code and input 
+data in order to circumvent security mechanisms. There is a large body
+of literature on the area of language-based security regarding 
+how to track implicit flows \cite{Sabelfeld:Myers:JSAC}. 
+
+
+There exists scenarios where 
+the code is non-malicious, i.e. written without malice. 
+Despite the good intentions and experience of programmers, 
+the code might still contain vulnerabilities 
+%(such 
+as the ones
+described in Section \ref{sec:example}. The attackers' goal  
+consists on craft input data in order to exploit 
+vulnerabilities and/or corrupt data. In this scenario,
+taint analysis certainly helps to discover vulnerabilities. 
+%If taint analysis ignores implicit flows, 
+How dangerous are implicit flows in non-malicious code? We argue that they
+are frequently harmless \cite{Russo:IOS}. The reason for that 
+relies on that non-malicious programmers
+need to write a more involved, and rather unnatural,
+code in order to, for instance, copy tainted strings into untainted ones. 
+In contrast, to produce explicit flows, programmers simply
+need to forget a call to some sanitization function. 
+For the rest of the paper, we consider 
+scenarios where the analyzed code is non-malicious. 
+
+
+
+\subsection{Using the library}
+\label{sec:using}
+\begin{figure}[t]
+%\begin{tabular}{l@{\hspace{10pt}}|@{\hspace{10pt}}l}
+{\small{
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,numberstyle=\tiny]{api.txt} 
+\end{minipage}
+%& 
+\hspace{40pt}
+\begin{minipage}[t]{0.5\linewidth}
+\lstinputlisting[language=Python,numbers=left,firstnumber=13,numberstyle=\tiny]{api2.txt} 
+\end{minipage}
+%\end{tabular}
+\caption{\label{fig:API}API for taint analysis}
+}}
+\end{figure}
+
+
+%From a developer point of view, 
+The library is essentially a series of functions 
+to mark  
+what are the sources of untrustworthy data, sensitive sinks, and
+sanitation functions. 
+%in a given application.
+Figure \ref{fig:API} illustrates how the API works.
+Symbol $\texttt{...}$ is a place holder for code that 
+is not relevant to explain the purpose of the API.
+We assume that $\texttt{v}$ is a variable, $\texttt{d}$ is an
+string or integer, and \texttt{f} is a user-defined function. Symbol
+$\texttt{T}$ represents a tag. 
+By default, tags can take values  
+\texttt{XSS}, \texttt{SQLI}, \texttt{OSI} (Operating System Injection), and
+\texttt{II} (Interpreter Injection).
+These values are used to indicate specific vulnerabilities that 
+could be exploited by tainted data.
+For instance, 
+tainted data associated with tag \texttt{SQLI} is likely to exploit 
+SQL injection vulnerabilities.
+%%
+%%
+Function $\texttt{taint}$ is used to taint values. 
+For example, line 1 taints variable \texttt{d}.
+The call to \texttt{untrusted(web.input)} 
+establishes that the results produced by \texttt{web.input} are tainted.
+Line 5 shows how \texttt{untrusted} can be used  to mark 
+the values returned by function \texttt{f}
+as untrustworthy. Observe the use of the decorator syntax
+ (\texttt{@untrusted}).
+%indicate that it returns
+%tainted values. 
+Function  
+\texttt{untrusted\_args} is used to indicate which functions' arguments must be
+tainted. This primitive is particularly useful 
+when programming frameworks require 
+to redefine some methods in order to get information from  
+external sources. 
+%into the application.
+% into the application. 
+As an example, Twisted\cite{Twisted}, a framework to 
+develop network applications, 
+calls method \texttt{lineReceived} from the class
+\texttt{LineOnlyReceiver} 
+every time that an string is received from the network.
+Lines 9--12 extend the class \texttt{LineOnlyReceiver}
+and implement the method \texttt{lineReceived}. 
+Line 10 taints the data that Twisted takes 
+from the network. 
+Functions \texttt{taint}, \texttt{untrusted}, and
+\texttt{untrusted\_args} associate all the tags to the
+tainted values. After all, 
+untrustworthy data might exploit any kind of vulnerability. 
+Line 13 marks \texttt{eval} as a sensitive sink. If eval receives 
+a tainted data with the tag \texttt{T},
+a possible vulnerability T is reported. Line 15 shows how to 
+use \texttt{ssink} with the decorator syntax. 
+Line 19 shows how \texttt{cleaner} establishes that 
+function \texttt{wash} sanitizes data with tag \texttt{T}. 
+As a result of that, function \texttt{w} removes tag \texttt{T}
+from tainted values. Line 21 shows the use
+of \texttt{cleaner} with the decorator syntax.
+{Sensitive sinks and sanitization functions
+can be associated with more than one kind of vulnerabilities 
+by just nesting decorators,
+i.e. \texttt{ssink(OSI)(ssink(II)(critical\_operation))}}.
+
+\subsection{Hardening \texttt{email.py}}
+\label{sec:secure:email}
+
+\begin{wrapfigure}{r}{7.3cm}
+\vspace{-30pt}
+{\small{
+%\begin{figure}[t]
+\lstinputlisting[language=Python,numbers=right,numberstyle=\tiny]{safeclean.py}
+\caption{\label{fig:example:secure} Secure version of module \texttt{email.py} }
+\vspace{-10pt}
+%\end{figure}
+}}
+\end{wrapfigure}
+
+%To illustrate how our library works, 
+We revise the example in Section \ref{sec:example}. 
+Figure \ref{fig:example:secure} shows the secure version of the code given 
+in Figure \ref{fig:example}. 
+Line 3 imports the library API. 
+Line 4 imports some sanitization functions. 
+Line 6 marks command \texttt{os.system} (capable
+to run arbitrary shell instructions) as a
+sensitive sink to \texttt{OSI} attacks.
+Tainted values reaching that sink must 
+not contain the tag \texttt{OSI}.
+%
+Lines 7 and 8 establish 
+that 
+%indicates that those functions validate data and 
+functions \texttt{s\_usermail} and \texttt{s\_file}
+%, defined in 
+%module \texttt{sanitize}, 
+sanitize data in order to avoid \texttt{OSI}
+attacks.
+%Lines 7 and 8 indicates that those functions validate data and 
+%remove tag \texttt{OSI} from tainted values. 
+Lines 10 and 11 mark user input as untrustworthy.
+When executing the program, the taint analysis  
+raises an alarm on line 16.
+The reason for that is that 
+variable \texttt{cmd} is tainted with the tag \texttt{OSI}. 
+Indeed, \texttt{cmd} is constructed from the untrustworthy values 
+\texttt{usermail} and \texttt{file}. 
+If we uncomment the lines where sanitization 
+takes place (lines 12 and 13), the program runs normally, i.e. no
+alarms are reported. 
+Observe that the main part of the code (lines 14--16)  
+are the same than in Figure \ref{fig:example}. 
+%We argue that applying our library to other examples simply requires  
+%to mark what are the sensitive sinks and sanitization functions (e.g.
+%at the beginning of the code) as well as the sources of
+%untrustworthy data. 
+
+% 3 Pages
+\section{Implementation}
+\label{sec:implementation}
+\begin{figure}[t]
+{\small{
+\lstinputlisting[language=Python,numbers=left, numberstyle=\tiny]{taint_class.py}
+\caption{\label{fig:generate} Function to generate \nametklass classes}
+}}
+\end{figure}
+
+In this section we present the details of our implementation. Due to lack of
+space, we show the most interesting parts.
+The full
+implementation of the library is publicly available at \cite{PythonLib}.
+
+
+%% Intuitively classes and methods
+One of the core part of the library 
+deals with how to keep track of taint information 
+for built-in classes.
+% and their corresponding operations.
+%main challenge that the library implements is how to 
+%The core of the library implements how built-in 
+%values, and their corresponding operations, can keep track of 
+%taint information. 
+The library defines 
+subclasses of built-in classes
+in order to indicate if values are tainted or not.
+%(like \texttt{str} or \texttt{int})
+An object of these subclasses posses an attribute to indicate a set 
+of tags 
+%(Section \ref{sec:using}) 
+associated to it. 
+%When the set of tags is empty, objects are not tainted.
+Objects are considered untainted when the
+set of tags is empty. 
+%Objects are not tainted when its set of tags is the empty.
+%In the case that this set is empty, 
+%the value is not tainted. 
+We refer to these subclasses as
+\emph{\nametklass classes}.
+In addition, the methods inherited from the built-in classes 
+are redefined in order to propagate taint information. 
+%This propagation is done by updating the set of tags
+%in tainted objects. 
+More specifically, methods that belong to 
+\nametklass classes return objects with  
+the union of tags found in their arguments and 
+the object calling the method. 
+In Python, 
+the dynamic dispatch 
+mechanism guarantees that, for instance, 
+the concatenations of untainted and tainted strings is performed 
+%carried out 
+with calls to methods of \nametklass classes, which properly   
+%value, from a built-in class, and a tainted value, from its 
+%corresponding \nametklass class, results in calls to 
+%the methods of the \nametklass class. In that manner, 
+%the 
+propagates taint information. % can be successfully done. 
+% can then be accordingly done.
+%We illustrate these ideas later  with
+%examples.
+
+\subsection{Generating \nametklass classes}
+\label{sec:general}
+
+%\end{figure}
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-30pt}
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{propagate.py}
+\caption{\label{fig:propagate} Propagation of taint information}
+}}
+\vspace{-15pt}
+\end{wrapfigure}
+Figure \ref{fig:generate} presents a function to generate
+\nametklass classes. The function takes a built-in
+class (\texttt{klass}) and a list of its methods
+(\texttt{methods}) where taint propagation 
+must be performed. 
+%\textbf{DESCRIBE ON THIS SENTENCE
+%WHY NOT GENERAL INSTEAD OF A LIST OF METHODS}. 
+Line 2 defines the name of the \nametklass class \texttt{tklass}.
+Objects of \texttt{tklass}  
+are associated to the empty set
+ of tags when created (lines 3--6). Attribute 
+\texttt{taints} is introduced to 
+indicate the tags related to tainted values.
+% to them.
+Using Python's introspection features, variable 
+\texttt{d} contains, among other
+things, the list of methods for the built-in class (line 7). 
+For each method in the built-in class and in \texttt{methods} 
+(lines 8--10), the code adds to \texttt{tklass} a 
+method that has the same name and computes the same results 
+but also propagates taint information  
+%, where the method 
+%also performs propagation of taint information 
+(line 11).
+%Observe that added methods have the same names as the ones 
+%in the built-in class.  
+Function \texttt{propagate\_method} is explained below.
+Lines 12--15 set method \texttt{\_\_radd\_\_} to taint-aware 
+classes when built-in classes do not include that method but 
+\texttt{\_\_add\_\_}.
+%and not \texttt{\_\_radd\_\_}. 
+Method \texttt{\_\_radd\_\_} is called to implement the binary operations 
+with reflected (swapped) operands\footnote{The built-in class 
+   for strings implements all 
+   the reflected versions of its operators but \texttt{\_\_add\_\_}.}. 
+%This function is called only if the left operand does not support the 
+%corresponding operation. 
+For instance, to evaluate the expression \texttt{x+y}, where \texttt{x} is a built-in string 
+and y is a taint-aware string, Python calls \texttt{\_\_radd\_\_} from 
+\texttt{y} and thus executing \texttt{y.\_\_radd\_\_(x)}. In that manner, 
+the taint information of \texttt{y} is propagated to the expression. Otherwise, the method
+\texttt{x.\_\_add\_\_(y)} is called instead, 
+which results in an untainted string.
+Finally, the \nametklass class is returned (line 16). 
+
+The implementation of \texttt{propagate\_method} is shown in Figure
+\ref{fig:propagate}. The function takes a method and returns another
+method that computes the same results but propagates taint information. Line 3
+calls the method received as argument and stores the results in 
+\texttt{r}. 
+Lines 4--9 collect the tags from the current object and 
+the method's arguments into \texttt{t}. 
+Variable \texttt{r} 
+might refer to an object of a built-in class and
+therefore not include the attribute \texttt{taints}. For that reason, 
+function \texttt{taint\_aware} is designed to 
+transform objects from built-in classes  
+into \nametklass ones. 
+For example, if \texttt{r} refers
+to a list of objects of the class \texttt{str}, function \texttt{taint\_aware} returns  
+a list of objects of the \nametklass class 
+derived from \texttt{str}. 
+Function \texttt{taint\_aware} 
+is essentially implemented as a structural mapping on list, tuples,
+sets, and dictionaries. 
+The library does not
+taint built-in containers, but rather their elements. This is a design decision 
+based on the assumption that non-malicious code does not exploit
+containers to circumvent the taint analysis (e.g. by 
+encoding the value of tainted integers into 
+the length of lists).
+%For instance, we assume that nonmalicious programs do not 
+\begin{wrapfigure}{r}{6.6cm}
+\vspace{-20pt}
+{\small{
+\lstinputlisting[language=Python]{factory.py}
+\caption{\label{fig:factory} \nameTklass classes for strings and
+  integers}
+}}
+\vspace{-20pt}
+\end{wrapfigure}
+Otherwise, the implementation of the library can be easily adapted.
+Line 11 returns the taint-aware version of \texttt{r} 
+with the tags collected in \texttt{t}. 
+
+
+%At the moment of implementing 
+%\texttt{t\_}, some design decisions are made. 
+
+  
+To illustrate how to use  function \texttt{taint\_class}, Figure \ref{fig:factory} 
+produces \nametklass classes for strings and integers, where 
+\texttt{str\_methods} and \texttt{int\_methods} are lists 
+of methods for the classes \texttt{str} and
+\texttt{int}, respectively. Observe how the code presented in Figures
+\ref{fig:generate} and \ref{fig:propagate} is general enough to be
+applied to several built-in classes.
+  
+
+\subsection{Decorators}
+
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-30pt} 
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{taint.py}
+\caption{\label{fig:untrusted} Code for \texttt{untrusted}}
+\vspace{-10pt}
+}}
+\vspace{-10pt}
+\end{wrapfigure}
+Except for \texttt{taint}, the rest of 
+the API is implemented as decorators. In our library, 
+decorators are high 
+order functions \cite{IntroductionFunctional}, 
+i.e. functions that take functions as arguments and return functions.
+Figure \ref{fig:untrusted} shows the code for \texttt{untrusted}.
+Function f, given as an argument, 
+is the function that returns 
+untrustworthy results (line 1). 
+Intuitively, 
+function \texttt{untrusted} returns
+a function (\texttt{inner}) that 
+calls function \texttt{f} (line 3) and taints the values 
+returned by it (line 4). Symbol \texttt{TAGS} is the set of 
+all the tags used by the library. 
+% Due to lack of space, we only show
+% the implementation of \texttt{untrusted}.
+% Function \texttt{t\_} returns a taint-aware object when 
+% \texttt{r} is an object of a built-in class. Otherwise, 
+%  \texttt{t\_} updates the value of attribute \texttt{taints}.
+Readers should refer to \cite{PythonLib} 
+for the implementation details about the rest of the 
+API.
+
+
+
+
+
+
+
+
+
+
+\subsection{\nameTklass functions} 
+
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-30pt}
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{propagate_func.py}
+\vspace{-5pt}
+\caption{\label{fig:propagate_func} Propagation of taint information among
+  possibly different taint-aware objects}
+}}
+\end{wrapfigure}
+Several dynamic taint analysis
+\cite{Perl,Nguyen05,Jovanovic06pixy:a,KozlovPetukhov07,Futo07,SeoLam2010}
+do not propagate taint information when results 
+different from strings are computed from tainted values. 
+(e.g. the length of a tainted string is usually an untainted
+integer). This design decision might affect the abilities of taint
+analysis to detect vulnerabilities. For instance, 
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-25pt}
+{\small{
+\lstinputlisting[language=Python]{example_connect.py}
+\vspace{-5pt}
+\caption{\label{fig:propagate_func:example} \nameTklass
+  functions for strings and integers}
+}}
+\vspace{-20pt}
+\end{wrapfigure}
+taint analysis might miss dangerous patterns when 
+programs encode strings as lists of numbers. 
+A common workaround to this problem is to 
+mark functions that perform
+encodings of strings as sensitive sinks. In that manner, 
+sanitization must occur before strings are represented in another
+format. 
+Nevertheless, this approach 
+is unsatisfactory: the intrinsic meaning of sensitive sinks may be
+lost. Sensitive sinks are security critical operations rather than 
+functions that perform encodings of strings.
+%It is not the encoding of strings what produces the 
+%security breach, but rather their contents at 
+%sensitive sinks.
+%reaching security
+%critical operations.
+Our library provides means
+to start breaching this gap. 
+
+Figure \ref{fig:propagate_func} presents a general function that allows to define 
+operations that return tainted values when their arguments 
+involve taint-aware objects. As a result, it is possible
+to define functions that, for instance, take tainted strings and 
+return tainted integers. We classify this kind of functions 
+as \emph{taint-aware}. 
+
+Similar to the code shown in 
+Figure \ref{fig:propagate}, \texttt{propagate\_func} is a high order
+function. It takes function \texttt{f} 
+and returns another function (\texttt{inner}) able to propagate 
+taint information from the arguments
+to the results.  Lines 3--7 collect tags 
+from the arguments. If the set of
+collected tags is empty, there are no tainted
+values involved and therefore no taint propagation is 
+performed (lines 9--10). Otherwise, 
+a taint-aware version of the results is returned with 
+the tags collected in the arguments (line 11). 
+%with the attribute \texttt{taints} sets to 
+%the union of the tags found in the arguments (line 12). 
+ 
+To illustrate the use of \texttt{propagate\_func}, Figure
+\ref{fig:propagate_func:example} shows 
+some \nametklass functions 
+for strings and integers. We redefine the standard functions to 
+compute lengths of lists (\texttt{len}), the ASCII code of a character
+(\texttt{chr}), and its inverse (\texttt{ord}). As a result, 
+\texttt{len(taint('string'))} returns the tainted integer 6.
+It is up to the users 
+of the library to decide which functions must be \nametklass depending
+on the scenario.
+The library only provides 
+%the means for that 
+%(i.e. function \texttt{propagate\_func}) and some 
+redefinition of standard functions 
+like the ones 
+shown in Figure \ref{fig:propagate_func:example}.
+% % %
+
+
+\subsection{Scope of the library}
+
+In Figure \ref{fig:generate}, 
+the method to automatically produce \nametklass classes does not 
+work with booleans. 
+The reason for that is that class \texttt{bool}
+cannot be subclassed in Python 
+\footnote{\url{http://docs.python.org/library/functions.html#bool}}.
+%This restriction seems to be an arbitrary decision and we could 
+%not find technical reasons to justify it. 
+Consequently, our library
+cannot handle tainted boolean values. We argue that 
+this shortcoming does not restrict the usability of the library for
+ two reasons. Firstly, different from previous approaches 
+\cite{Perl,Nguyen05,Jovanovic06pixy:a,KozlovPetukhov07,Futo07,SeoLam2010}, 
+the library can provide taint analysis for several 
+built-in types rather than just strings. Secondly, we consider that 
+booleans are typically used on guards. 
+Since the library already ignores implicit flows, 
+the possibilities to find vulnerabilities
+are not drastically reduced by disregarding taint information on booleans.
+% Not sure about this:
+% Moreover, implicit 
+% flows can be produced by having boolean expressions and 
+% short-circuit evaluation as the 
+% semantics for boolean operators. For instance, An implicit 
+% flow can be represented as the boolean expression
+% \texttt{(not ( x == taint('a') ) or 'a')}. 
+% This expression evaluates to \texttt{True} if
+% \texttt{x == 'a'}. Otherwise, it evaluates to \texttt{'a'}.
+
+When generating the taint-aware
+class \texttt{STR} (Figure \ref{fig:factory}), 
+we found some problems 
+when dealing with   
+%we discover that the Python interpreter
+%\footnote{CPython, version 2.6.x} forbids 
+%to redefine 
+some methods from the class \texttt{str}. 
+Python interpreter raises exceptions when  
+methods 
+\texttt{\_\_nonzero\_\_},
+\texttt{\_\_reduce\_\_}, and 
+\texttt{\_\_reduce\_ex\_\_} are redefined.
+Moreover, 
+when methods  
+\texttt{\_\_new\_\_}, \texttt{\_\_init\_\_}, 
+\texttt{\_\_getattribute\_\_},  
+%\texttt{\_\_cmp\_\_},  
+%\texttt{\_\_nonzero\_\_},
+and 
+\texttt{\_\_repr\_\_}
+%\texttt{\_\_reduce\_\_}, and 
+%\texttt{\_\_reduce\_ex\_\_}. 
+are redefined by function \texttt{taint\_class},
+an infinite recursion is produced when calling any of them.
+As for \texttt{STR}, the generation of the \nametklass 
+class \texttt{INT} exposes the same behavior, i.e. the 
+methods mentioned before produce the same problems.
+We argue 
+that this restriction does not drastically impact on the capabilities to 
+detect vulnerabilities.
+%Methods named among underscores  
+%are sinvoked by special syntax rather than explicitly 
+%\footnote{\url{http://docs.python.org/reference/datamodel.html#specialnames}}. 
+Methods \texttt{\_\_new\_\_} 
+is called 
+when creating objects.
+In Figure \ref{fig:generate}, \nametklass 
+classes define this method 
+on line 3.
+Method \texttt{\_\_init\_\_} is called when 
+initializing objects.  
+Python invokes this method  after an object is created 
+and programs do not usually called it explicitly.
+Method \texttt{\_\_getattribute\_\_}
+is used to access any attribute on a class.
+This method is automatically inherited from 
+\texttt{klass} and it works as expected for 
+\nametklass classes.
+%defined by 
+%Python when setting up classes.
+%Thus, 
+%method \texttt{\_\_getattribute\_\_} 
+%is defined for  
+%\texttt{STR} when the class is created.
+%Method \texttt{\_\_cmp\_\_} is applied to compare
+%objects. 
+Method \texttt{\_\_nonzero\_\_} is called when 
+objects need to be converted into a boolean value.
+%Similarly to bools, 
+As mentioned before, the
+analysis ignores taint information of data 
+that is typically used on guards. 
+Method \texttt{\_\_repr\_\_} pretty prints  
+objects on the screen. 
+In principle, developers should be careful 
+to not use calls to \texttt{\_\_repr\_\_} in order to 
+convert tainted objects into untainted ones. 
+However, this method is typically used for debugging 
+\footnote{\url{http://docs.python.org/reference/datamodel.html}}.
+Methods \texttt{\_\_reduce\_\_} and \texttt{\_\_reduce\_ex\_\_}
+are used by Pickle \footnote{An special Python module} to serialize strings. 
+Given these facts, 
+the argument \texttt{method} in function \texttt{taint\_class} 
+establishes the methods to be redefined on taint-aware classes
+(Figure \ref{fig:generate}).
+This argument is also useful when
+the built-in classes might 
+vary among different Python interpreters.
+%different versions of Python differ on the methods provided by 
+%the built-in classes .
+It is future work 
+to automatically determine the lists of methods to be redefined for different 
+built-in classes and different versions of Python.
+
+%% Connecting functions
+It is up to the users of the library 
+to decide which built-in classes and functions must be
+taint-aware. This attitude comes from the need of being flexible 
+and not affecting performance unless it is necessary. 
+Why users interested on 
+taint analysis for strings should accept 
+run-time overheads due to tainted integers? 
+
+
+%%% Taint marks lost!
+It is important to remark that the library only tracks taint information 
+in the source code being developed. As a consequence, 
+taint information could be lost if, for example, 
+taint values are given to external 
+libraries (or libraries written in other languages)
+that are not taint-aware. 
+One way to tackle this problem is to augment the library 
+functions to be taint-aware by applying \texttt{propagate\_func} to them. 
+ 
+
+As a future work, we will explore if 
+%defining 
+%some \nametklass classes, 
+it is possible to automatically 
+define \namefunc functions 
+based on the built-in functions (found in the 
+interpreter) and \nametklass classes in order to 
+increase the number of \nametklass functions provided by the library.
+At the moment, the library provides 
+\nametklass classes for
+strings, integers, floats, and unicode as well as some 
+\namefunc functions (e.g. \texttt{len}, \texttt{chr}, 
+and \texttt{ord}). 
+
+
+
+% 1 Page
+\section{Related Work}
+\label{sec:related}
+
+%% Intro
+A considerable amount of literature has been published on 
+taint analysis. Readers can refer to 
+\cite{Chang:et:al:CCS08} for a description 
+of how this technique has been applied 
+on different research areas. In this section, we focus on 
+analyses developed for popular web scripting languages. 
+
+
+
+%% Native support for taint modes. Perl and Ruby
+Perl \cite{Perl} was the first scripting language to include taint analysis
+as a native feature of the interpreter. Perl taint mode marks strings
+originated from outside a program as tainted (i.e. 
+inputs from users, environment variables, and files). Sanitization
+is done by using regular expressions. Writing to files, 
+executing shell commands, and sending information over the network are
+considered sensitive sinks. Differently, 
+our library gives freedom to developers 
+to classify the sources of 
+tainted data, sanitization functions, and sensitive sinks. 
+Similar to Perl, Ruby \cite{thomas2004prub} provides 
+support for taint analysis. Ruby's taint mode, however, 
+performs analysis at the level of
+objects rather than only strings. Both, Perl and Ruby, utilize dynamic
+techniques for their analyses.
+
+%% PHP 
+Several taint analysis have been developed for the popular
+scripting language PHP. 
+Aiming to avoid any user intervention, 
+authors in \cite{WebSSARI} combine static and dynamic
+techniques to automatically repair vulnerabilities in PHP code. 
+They 
+%develop a type-system to detect where to 
+%insert some predetermined 
+%sanitization functions when tainted values
+propose to use static analysis (type-system) in order to insert some predetermined 
+sanitization functions when tainted values  
+reach sensitive sinks. 
+%Sanitization functions
+%are then executed at run-time. 
+Observe that the semantic 
+of programs might be changed when inserting calls to sanitization functions, which constitutes the dynamic
+part of the analysis in \cite{WebSSARI}.  
+Our approach, on the other hand, does not implement a type-system and only reports vulnerabilities, i.e.  
+it is up to developers
+to decide where, and how, sanitization procedures must be called. 
+In \cite{Nguyen05}, 
+Nguyen-Toung et al. adapt the PHP interpreter to provide a dynamic 
+taint analysis at the level of characters, which the authors 
+call \emph{precise tainting}. 
+They argue that precise tainting gains precision over traditional 
+taint analyses for strings.
+%and thus reducing the number of 
+%false alarms. 
+Authors need to manually  
+exploit, when feasible, semantics definitions of functions 
+in order to accurately keep track of tainted characters. 
+Our approach, on the other hand, uses the same mechanism to 
+handle tainted values 
+independently of the nature of a given function. Consequently, 
+we are able to automatically extend our analysis to 
+different set of data types but without being as precise as 
+Nguyen-Toung et al.' work. 
+It is worth seeing studies indicating 
+how much precision (i.e. less false alarms) 
+it is obtained with \emph{precise tainting} in practice.
+Similarly to Nguyen-Toung et al.'s work,
+Futoransky \cite{Futo07} 
+et al. provide a precise dynamic taint analysis for PHP.
+Pietraszek and Berghe \cite{Pietraszek05defendingagainst}
+modify the PHP runtime environment to 
+assign \emph{metadata} to user-provided input as well as to 
+provide metadata-preserving string operations. Security critical 
+operations are also   
+instrumented to evaluate, when taken strings as input, 
+the risk of executing such operations based on the assigned metadata.
+Jovanovic et al. \cite{Jovanovic06pixy:a} 
+propose to combine a traditional data flow and alias 
+analysis to increase the precision of their static taint analysis for PHP.
+They observe a $50\%$ rate of false alarms (i.e. one false alarm for 
+each vulnerability). 
+The works in \cite{Saner, Monga:et:all:2009} combine static 
+and dynamic techniques.
+The static techniques are 
+%essentially 
+used to 
+reduce the number of program variables 
+where taint information must be tracked at 
+run-time.
+
+
+%% Java
+A taint analysis for Java \cite{Haldar05dynamictaint} instruments
+the class \texttt{java.lang.String} as well as  classes that 
+present untrustworthy sources and sensitive sinks. 
+The instrumentation of \texttt{java.lang.String} is done offline, 
+while other classes are instrumented online. The authors 
+mention that a custom class loader in the JVM is needed in order 
+to perform online instrumentation. Another taint analysis 
+for Java \cite{TrippPFSW09}, called TAJ, focus on scalability and 
+performance requirements for industry-level applications.
+To achieve industrial demands, TAJ uses
+static tecniques for pointer analysis, call-graph construction, 
+and slicing. Similarly, the authors in 
+\cite{Livshits:Lam:USENIX} propose an static analysis 
+for Java that focus on achieving precision and scalability.
+ 
+
+
+%We obtain a similar effect than online instrumentation 
+%due to decorators, class inheritance, and overloading in Python.
+
+%% Information-flow as a library
+A series of work 
+\cite{PengLi+:Arrows,Tsai+:Library,Russo+:Haskell08} propose
+to provide information-flow security via a library in Haskell. 
+These libraries handle explicit and implicit flows and programmers
+need to write programs with an special-purpose API.
+Similar to other taint analysis, 
+our library does not contemplate implicit flows %(see Section \ref{sec:library})
+and programs do not need to be written 
+with an special-purpose API. 
+
+Among the closest related work, we can mention 
+\cite{KozlovPetukhov07} and \cite{SeoLam2010}.
+In  \cite{KozlovPetukhov07}, authors modify the Python interpreter 
+to provide a dynamic taint analysis. More specifically, %they extend
+the representation of the class \texttt{str} is extended to include a boolean 
+flag to indicate if a string is tainted. We provide a similar analysis 
+%the same 
+%taint analysis 
+but without modifying the interpreter.
+The work by Seo and Lam \cite{SeoLam2010}, called InvisiType, 
+aims to enforce safety checks without 
+modifying the analyzed code. Similar to our assumptions, their approach 
+is designed to work with non-malicious code. InvisiType is more general 
+than our approach. In fact, authors show how InvisiType can provide taint
+analysis and access control checks for Python programs. However, 
+InvisiType relies on several modifications in the Python interpreter 
+in order to perform the security checks at the right places. 
+For example, when native methods are called, 
+the run-time environment firstly calls the special purpose 
+method \texttt{\_\_nativecall\_\_}.  
+%to 
+%propagate taint information. 
+As a manner to specifying policies, 
+the approach provides the class \texttt{InvisiType} that defines special 
+purposes methods to get support from the run-time system (e.g.
+\texttt{\_\_nativecall\_\_} is one of those methods). 
+Subclasses of this class represent security policies. 
+The approach relies on multiple inheritance to 
+extend existing classes with security checks. 
+To include or remove security checks from objects, 
+programs need to explicitly call functions \emph{promote} and 
+\emph{demote}. Being less invasive, our library uses 
+decorators instead of explicit function calls to taint and
+untaint data. 
+%Due to its specific purpose and simplicity, 
+Our approach does not require 
+multiple inheritance. 
+
+% 1/2 Page
+\section{Conclusions}
+\label{sec:conclusions}
+
+We propose a taint mode for Python via a library entirely written
+in Python.
+We show that no modifications in the interpreter are needed. 
+%To the best of our knowledge, 
+%this is the first library to provide a taint mode for a web 
+%scripting language. 
+Different from traditional taint analysis, our library
+is able to 
+keep track of tainted values for  
+several built-in classes.
+Additionally, the library provide means to define functions that 
+propagate taint information
+%from the arguments to the results 
+(e.g. the length of a tainted string produces a
+tainted integer). The library consists on around 300 LOC.
+To apply taint analysis in programs, it is only needed 
+to indicate the sources of untrustworthy data, sensitive 
+sinks, and sanitization functions. The library uses decorators 
+as a noninvasive approach to mark source code. 
+Python's object classes 
+and dynamic dispatch mechanism allow the analysis to be executed with almost no modifications
+in the  code. %Our approach seems  promising.
+%to detect vulnerabilities in real 
+%applications. 
+As a future work, we plan to use the library to harden frameworks
+for web development and evaluate the capabilities of our library to 
+detect vulnerabilities
+in popular web applications.
+
+
+<<<<<<< main.tex
+
+%{\small{
+%\paragraph{Acknowledgments} Anonimyzed
+%Thanks are due to Arnar Birgisson for the interesting discussions.
+%This work was funded by the Swedish research agencies VR and 
+%the scholarship program for graduated students 
+%from the Universidad Tecnol\'{o}gica Nacional. 
+%}}
+=======
+{\small{
+\paragraph{Acknowledgments}
+Thanks are due to Arnar Birgisson for interesting discussions.
+This work was funded by the Swedish research agencies VR and 
+the scholarship program for graduated students 
+from the Universidad Tecnol\'{o}gica Nacional, Facultad Regional Santa Fe. 
+}}
+>>>>>>> 1.56
+{\small{
+\bibliographystyle{abbrv}
+\bibliography{literature}
+}}
+
+
+\end{document}
+
+ 

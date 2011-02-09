@@ -1,0 +1,294 @@
+\begin{figure}[t]
+{\small{
+\lstinputlisting[language=Python,numbers=left, numberstyle=\tiny]{taint_class.py}
+\caption{\label{fig:generate} Function to generate \nametklass classes}
+}}
+\end{figure}
+
+In this section we present the details of our implementation. Due to lack of
+space, we show the most interesting parts.
+The full
+implementation of the library is publicly available at \cite{PythonLib}.
+
+
+%% Intuitively classes and methods
+One of the core part of the library 
+deals with how to keep track of taint information 
+for built-in classes.
+% and their corresponding operations.
+%main challenge that the library implements is how to 
+%The core of the library implements how built-in 
+%values, and their corresponding operations, can keep track of 
+%taint information. 
+The library defines 
+subclasses of built-in classes
+in order to indicate if values are tainted or not.
+%(like \texttt{str} or \texttt{int})
+An object of these subclasses posses an attribute to indicate a set 
+of tags 
+%(Section \ref{sec:using}) 
+associated to it. 
+%When the set of tags is empty, objects are not tainted.
+Objects are considered untainted when the
+set of tags is empty. 
+%Objects are not tainted when its set of tags is the empty.
+%In the case that this set is empty, 
+%the value is not tainted. 
+We refer to these subclasses as
+\emph{\nametklass classes}.
+In addition, the methods inherited from the built-in classes 
+are redefined in order to propagate taint information. 
+%This propagation is done by updating the set of tags
+%in tainted objects. 
+More specifically, methods that belong to 
+\nametklass classes return objects with  
+the union of tags found in their arguments and 
+the object calling the method. 
+In Python, 
+the dynamic dispatch 
+mechanism guarantees that, for instance, 
+the concatenations of untainted and tainted strings is performed 
+%carried out 
+with calls to methods of \nametklass classes, which properly   
+%value, from a built-in class, and a tainted value, from its 
+%corresponding \nametklass class, results in calls to 
+%the methods of the \nametklass class. In that manner, 
+%the 
+propagates taint information. % can be successfully done. 
+% can then be accordingly done.
+%We illustrate these ideas later  with
+%examples.
+
+\section{Generating \nametklass classes}
+\label{sec:general}
+
+%\end{figure}
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-30pt}
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{propagate.py}
+\caption{\label{fig:propagate} Propagation of taint information}
+}}
+\vspace{-15pt}
+\end{wrapfigure}
+Figure \ref{fig:generate} presents a function to generate
+\nametklass classes. The function takes a built-in
+class (\texttt{klass}) and a list of its methods
+(\texttt{methods}) where taint propagation 
+must be performed. 
+%\textbf{DESCRIBE ON THIS SENTENCE
+%WHY NOT GENERAL INSTEAD OF A LIST OF METHODS}. 
+Line 2 defines the name of the \nametklass class \texttt{tklass}.
+Objects of \texttt{tklass}  
+are associated to the empty set
+ of tags when created (lines 3--6). Attribute 
+\texttt{taints} is introduced to 
+indicate the tags related to tainted values.
+% to them.
+Using Python's introspection features, variable 
+\texttt{d} contains, among other
+things, the list of methods for the built-in class (line 7). 
+For each method in the built-in class and in \texttt{methods} 
+(lines 8--10), the code adds to \texttt{tklass} a 
+method that has the same name and computes the same results 
+but also propagates taint information  
+%, where the method 
+%also performs propagation of taint information 
+(line 11).
+%Observe that added methods have the same names as the ones 
+%in the built-in class.  
+Function \texttt{propagate\_method} is explained below.
+Lines 12--15 set method \texttt{\_\_radd\_\_} to taint-aware 
+classes when built-in classes do not include that method but 
+\texttt{\_\_add\_\_}.
+%and not \texttt{\_\_radd\_\_}. 
+Method \texttt{\_\_radd\_\_} is called to implement the binary operations 
+with reflected (swapped) operands\footnote{The built-in class 
+   for strings implements all 
+   the reflected versions of its operators but \texttt{\_\_add\_\_}.}. 
+%This function is called only if the left operand does not support the 
+%corresponding operation. 
+For instance, to evaluate the expression \texttt{x+y}, where \texttt{x} is a built-in string 
+and y is a taint-aware string, Python calls \texttt{\_\_radd\_\_} from 
+\texttt{y} and thus executing \texttt{y.\_\_radd\_\_(x)}. In that manner, 
+the taint information of \texttt{y} is propagated to the expression. Otherwise, the method
+\texttt{x.\_\_add\_\_(y)} is called instead, 
+which results in an untainted string.
+Finally, the \nametklass class is returned (line 16). 
+
+The implementation of \texttt{propagate\_method} is shown in Figure
+\ref{fig:propagate}. The function takes a method and returns another
+method that computes the same results but propagates taint information. Line 3
+calls the method received as argument and stores the results in 
+\texttt{r}. 
+Lines 4--9 collect the tags from the current object and 
+the method's arguments into \texttt{t}. 
+Variable \texttt{r} 
+might refer to an object of a built-in class and
+therefore not include the attribute \texttt{taints}. For that reason, 
+function \texttt{taint\_aware} is designed to 
+transform objects from built-in classes  
+into \nametklass ones. 
+For example, if \texttt{r} refers
+to a list of objects of the class \texttt{str}, function \texttt{taint\_aware} returns  
+a list of objects of the \nametklass class 
+derived from \texttt{str}. 
+Function \texttt{taint\_aware} 
+is essentially implemented as a structural mapping on list, tuples,
+sets, and dictionaries. 
+The library does not
+taint built-in containers, but rather their elements. This is a design decision 
+based on the assumption that non-malicious code does not exploit
+containers to circumvent the taint analysis (e.g. by 
+encoding the value of tainted integers into 
+the length of lists).
+%For instance, we assume that nonmalicious programs do not 
+\begin{wrapfigure}{r}{6.6cm}
+\vspace{-20pt}
+{\small{
+\lstinputlisting[language=Python]{factory.py}
+\caption{\label{fig:factory} \nameTklass classes for strings and
+  integers}
+}}
+\vspace{-20pt}
+\end{wrapfigure}
+Otherwise, the implementation of the library can be easily adapted.
+Line 11 returns the taint-aware version of \texttt{r} 
+with the tags collected in \texttt{t}. 
+
+
+%At the moment of implementing 
+%\texttt{t\_}, some design decisions are made. 
+
+  
+To illustrate how to use  function \texttt{taint\_class}, Figure \ref{fig:factory} 
+produces \nametklass classes for strings and integers, where 
+\texttt{str\_methods} and \texttt{int\_methods} are lists 
+of methods for the classes \texttt{str} and
+\texttt{int}, respectively. Observe how the code presented in Figures
+\ref{fig:generate} and \ref{fig:propagate} is general enough to be
+applied to several built-in classes.
+  
+
+\section{Decorators}
+
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-30pt} 
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{taint.py}
+\caption{\label{fig:untrusted} Code for \texttt{untrusted}}
+\vspace{-10pt}
+}}
+\vspace{-10pt}
+\end{wrapfigure}
+Except for \texttt{taint}, the rest of 
+the API is implemented as decorators. In our library, 
+decorators are high 
+order functions \cite{IntroductionFunctional}, 
+i.e. functions that take functions as arguments and return functions.
+Figure \ref{fig:untrusted} shows the code for \texttt{untrusted}.
+Function f, given as an argument, 
+is the function that returns 
+untrustworthy results (line 1). 
+Intuitively, 
+function \texttt{untrusted} returns
+a function (\texttt{inner}) that 
+calls function \texttt{f} (line 3) and taints the values 
+returned by it (line 4). Symbol \texttt{TAGS} is the set of 
+all the tags used by the library. 
+% Due to lack of space, we only show
+% the implementation of \texttt{untrusted}.
+% Function \texttt{t\_} returns a taint-aware object when 
+% \texttt{r} is an object of a built-in class. Otherwise, 
+%  \texttt{t\_} updates the value of attribute \texttt{taints}.
+Readers should refer to \cite{PythonLib} 
+for the implementation details about the rest of the 
+API.
+
+\section{\nameTklass functions} 
+
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-30pt}
+{\small{
+\lstinputlisting[language=Python,numbers=right, numberstyle=\tiny]{propagate_func.py}
+\vspace{-5pt}
+\caption{\label{fig:propagate_func} Propagation of taint information among
+  possibly different taint-aware objects}
+}}
+\end{wrapfigure}
+Several dynamic taint analysis
+\cite{Perl,Nguyen05,Jovanovic06pixy:a,KozlovPetukhov07,Futo07,SeoLam2010}
+do not propagate taint information when results 
+different from strings are computed from tainted values. 
+(e.g. the length of a tainted string is usually an untainted
+integer). This design decision might affect the abilities of taint
+analysis to detect vulnerabilities. For instance, 
+\begin{wrapfigure}{r}{7.5cm}
+\vspace{-25pt}
+{\small{
+\lstinputlisting[language=Python]{example_connect.py}
+\vspace{-5pt}
+\caption{\label{fig:propagate_func:example} \nameTklass
+  functions for strings and integers}
+}}
+\vspace{-20pt}
+\end{wrapfigure}
+taint analysis might miss dangerous patterns when 
+programs encode strings as lists of numbers. 
+A common workaround to this problem is to 
+mark functions that perform
+encodings of strings as sensitive sinks. In that manner, 
+sanitization must occur before strings are represented in another
+format. 
+Nevertheless, this approach 
+is unsatisfactory: the intrinsic meaning of sensitive sinks may be
+lost. Sensitive sinks are security critical operations rather than 
+functions that perform encodings of strings.
+%It is not the encoding of strings what produces the 
+%security breach, but rather their contents at 
+%sensitive sinks.
+%reaching security
+%critical operations.
+Our library provides means
+to start breaching this gap. 
+
+Figure \ref{fig:propagate_func} presents a general function that allows to define 
+operations that return tainted values when their arguments 
+involve taint-aware objects. As a result, it is possible
+to define functions that, for instance, take tainted strings and 
+return tainted integers. We classify this kind of functions 
+as \emph{taint-aware}. 
+
+Similar to the code shown in 
+Figure \ref{fig:propagate}, \texttt{propagate\_func} is a high order
+function. It takes function \texttt{f} 
+and returns another function (\texttt{inner}) able to propagate 
+taint information from the arguments
+to the results.  Lines 3--7 collect tags 
+from the arguments. If the set of
+collected tags is empty, there are no tainted
+values involved and therefore no taint propagation is 
+performed (lines 9--10). Otherwise, 
+a taint-aware version of the results is returned with 
+the tags collected in the arguments (line 11). 
+%with the attribute \texttt{taints} sets to 
+%the union of the tags found in the arguments (line 12). 
+ 
+To illustrate the use of \texttt{propagate\_func}, Figure
+\ref{fig:propagate_func:example} shows 
+some \nametklass functions 
+for strings and integers. We redefine the standard functions to 
+compute lengths of lists (\texttt{len}), the ASCII code of a character
+(\texttt{chr}), and its inverse (\texttt{ord}). As a result, 
+\texttt{len(taint('string'))} returns the tainted integer 6.
+It is up to the users 
+of the library to decide which functions must be \nametklass depending
+on the scenario.
+The library only provides 
+%the means for that 
+%(i.e. function \texttt{propagate\_func}) and some 
+redefinition of standard functions 
+like the ones 
+shown in Figure \ref{fig:propagate_func:example}.
+% % %
+
