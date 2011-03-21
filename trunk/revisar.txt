@@ -1,4 +1,0 @@
-explorar taint en perl
-taint en pypy
-taint php
-
