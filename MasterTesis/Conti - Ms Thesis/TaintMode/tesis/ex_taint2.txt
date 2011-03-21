@@ -1,9 +1,0 @@
->>> taint(42, II)
-42
->>> t = taint(42, II)
->>> t.taints
-set([4])
->>> tainted(t, II)
-True
->>> tainted(t, OSI)
-False

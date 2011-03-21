@@ -1,9 +1,0 @@
->>> @cleaner(XSS)
-... def plain_text(input):
-...     # some code
-...     return input
-... 
->>> t = taint("bad string", XSS)
->>> u = plain_text(t)
->>> tainted(u)
-False

@@ -1,9 +1,0 @@
-class add:
-    def POST(self):
-        user = web.input().user
-        meal = clean_osi(web.input().meal)
-        meal = web.input().meal
-        # save it to the file of the day
-        dayfile = datetime.today().strftime('%Y-%m-%d') + '.txt'
-        os.system("echo " + meal + " >> " + dayfile)
-        raise web.seeother('/')
